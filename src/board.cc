@@ -152,11 +152,11 @@ std::map<thc::Move, float> Board::outputProbsToMoves(std::array<floatBoard, 73> 
             } else if (move.special == thc::SPECIAL_PROMOTION_ROOK){
                 promotion_type = UnderPromotion::ROOK;
             } else {
-
+                printf("Unhandled promotion type: %d\n", move.special);
             }
 
             plane_index = mapper[promotion_type][1 - direction];
-        } else if (tolower(this->chessRules.squares[move.src]) == 'k'){
+        } else if (tolower(this->chessRules.squares[move.src]) == 'n'){
             // get the correct knight move
             direction = Mapper::getKnightDirection(move.src, move.dst);
             plane_index = mapper[KnightMove::NORTH_LEFT + direction][0];
@@ -165,6 +165,13 @@ std::map<thc::Move, float> Board::outputProbsToMoves(std::array<floatBoard, 73> 
             std::tuple<int, int> tuple = Mapper::getQueenDirection(move.src, move.dst);
             plane_index = mapper[std::get<0>(tuple)][std::get<1>(tuple)];
         }
+
+        if (plane_index < 0 or plane_index > 72){
+            printf("Plane index: %d\n", plane_index);
+            perror("Plane index out of bounds!");
+            exit(1);
+        }
+
         int row = move.src / 8;
         int col = move.src % 8;
         // create moveProb obj

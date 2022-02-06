@@ -94,6 +94,9 @@ float Node::getQ(){
 }
 
 float Node::getUCB(){
+	if (this->parent == nullptr){
+		return 0;
+	}
 	float exploration_rate = log((1 + this->parent->visit_count + 20000) / 20000) + 2;
 	return exploration_rate * this->prior * (sqrt(this->parent->visit_count) / (1 + this->visit_count));
 }

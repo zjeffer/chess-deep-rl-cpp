@@ -1,5 +1,5 @@
 #OBJS specifies which files to compile as part of the project
-OBJS = src/main.cc src/board.cc src/mcts.cc src/move.cc src/node.cc src/chess/thc.cc src/neuralnet.cc
+OBJS = src/main.cc src/board.cc src/mcts.cc src/move.cc src/node.cc src/chess/thc.cc src/neuralnet.cc src/mapper.cc
 
 #CC specifies which compiler we're using
 CC = g++
