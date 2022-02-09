@@ -33,7 +33,7 @@ void MCTS::run_simulations(int num_simulations) {
 		auto stop = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start_time);
 		printf("Simulation %d took %li microseconds\n", i, duration.count());
-		if (i % 500 == 0) {
+		if (i % 100 == 0) {
 			printf("Tree depth: %d\n", getTreeDepth(this->root));
 		}
 	}
@@ -86,19 +86,20 @@ float MCTS::expand(Node* node){
 
 	// add nodes for every move
 	for (int i = 0; i < (int)legal_moves.size(); i++) {
+		thc::Move move = legal_moves[i];
 		// make the move on the board
-		std::string new_fen = board.makeMove(legal_moves[i]);
+		std::string new_fen = board.makeMove(move);
 
 		// get the move probability for this move
-		float prior = moveProbs[legal_moves[i]];
+		float prior = moveProbs[move];
 		
 		// create a new node
-		Node* child = new Node(new_fen, node, prior);
+		Node* child = new Node(new_fen, node, move, prior);
 		// add the new node to the children of the current node
 		node->add_child(child);
 
 		// undo move
-		board.undoMove(legal_moves[i]);
+		board.undoMove(move);
 	}
 	return output_value;
 }

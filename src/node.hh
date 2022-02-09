@@ -2,12 +2,13 @@
 #define node_hh
 
 
+#include "chess/thc.hh"
 #include <vector>
 #include <string>
 
 class Node {
 public:
-	Node(std::string fen, Node* parent, float prior);
+	Node(std::string fen, Node* parent, thc::Move action, float prior);
 	Node();
 	~Node();
 
@@ -39,14 +40,18 @@ public:
 
 	bool getPlayer();
 
+	thc::Move getAction();
+
+
 private:
 	std::string fen;
 	Node* parent;
+	thc::Move action;
 	std::vector<Node*> children;
 
 	int visit_count; // N
 	float value; // W
-	int prior; // P
+	float prior; // P
 
 };
 

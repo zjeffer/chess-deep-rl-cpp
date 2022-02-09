@@ -17,6 +17,7 @@ struct floatBoard {
 class Board {
 	public:
 		Board(std::string fen);
+		Board();
 		~Board();
 
 		std::string makeMove(thc::Move move);
@@ -29,6 +30,8 @@ class Board {
 		void getLegalMoves(std::vector<thc::Move> &moves);
 
 		std::map<thc::Move, float> outputProbsToMoves(std::array<floatBoard, 73> &outputProbs, std::vector<thc::Move> legalMoves);
+
+		thc::ChessRules getChessRules();
 
 	private:
 

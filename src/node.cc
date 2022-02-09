@@ -2,15 +2,17 @@
 #include <string.h>
 #include <math.h>
 
-Node::Node(std::string fen, Node* parent, float prior) {
+Node::Node(std::string fen, Node* parent, thc::Move action, float prior) {
 	this->fen = fen;
-	this->parent = nullptr;
+	this->parent = parent;
+	this->action = action;
+	this->prior = prior;
+
 	this->visit_count = 0;
 	this->value = 0;
-	this->prior = 0.0F;
 }
 
-Node::Node() : Node("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", nullptr, 0.0F) {
+Node::Node() : Node("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", nullptr, thc::Move(), 1.0) {
 	
 }
 
@@ -105,4 +107,8 @@ bool Node::getPlayer(){
 	// parse the fen and return the current player
 	// TODO: implement this
 	return true;
+}
+
+thc::Move Node::getAction(){
+	return this->action;
 }
