@@ -1,2 +1,4 @@
 old/
 neural-net/
+.cache/
+build
