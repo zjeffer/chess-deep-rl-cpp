@@ -1,5 +1,7 @@
 #include "mcts.hh"
-#include "board.hh"
+#include "environment.hh"
+#include "neuralnet.hh"
+#include "tqdm.h"
 #include <stdio.h>
 
 #include "chess/thc.hh"
@@ -8,20 +10,21 @@
 
 
 
-MCTS::MCTS(Node* root) {
+MCTS::MCTS(Node* root, NeuralNetwork* nn) {
 	this->root = root;
-	this->nn = NeuralNetwork();
+	this->nn = nn;
 }
 
 MCTS::~MCTS() {
-	// delete this->root;
+	delete this->root;
 }
 
 
 void MCTS::run_simulations(int num_simulations) {
 	printf("Running %d simulations...\n", num_simulations);
+	tqdm bar;
 	for (int i = 0; i < num_simulations; i++) {
-		auto start_time = std::chrono::high_resolution_clock::now();
+		bar.progress(i, num_simulations);
 		// selection
 		Node* leaf = select(this->root);
 
@@ -30,43 +33,51 @@ void MCTS::run_simulations(int num_simulations) {
 
 		// backpropagation
 		backpropagate(leaf, value);
-		auto stop = std::chrono::high_resolution_clock::now();
-		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start_time);
-		printf("Simulation %d took %li microseconds\n", i, duration.count());
-		if (i % 100 == 0) {
-			printf("Tree depth: %d\n", getTreeDepth(this->root));
-		}
 	}
+	printf("Tree depth: %d\n", getTreeDepth(this->root));
 }
 
 Node* MCTS::select(Node* root){
+	auto start_time = std::chrono::high_resolution_clock::now();
+
 	Node* current = root;
-    while (!current->is_leaf()) {
-		// printf("Traversing...\n");
+	int traversals = 0;
+    while (!current->isLeaf()) {
+		traversals++;
         // get the max Q+U value
-		Node* best_child = nullptr;
+		std::vector<Node*> children = current->getChildren();
+		// start with random child as best child
+		if (children.size() == 0) {
+			// TODO
+			exit(1);
+		}
+		Node* best_child = children[rand() % children.size()];
 		float best_score = -1;
-		for (int i = 0; i < (int)current->getChildren().size(); i++) {
-			Node* child = current->getChildren()[i];
+		// std::cout << "Children: " << children.size() << std::endl;
+		for (int i = 0; i < (int)children.size(); i++) {
+			Node* child = children[i];
 			float score = child->getPUCTScore();
-			if (score >= best_score) {
+			if (score > best_score) {
 				best_child = child;
 				best_score = score;
 			}
 		}
 		if (best_child == nullptr) {
+			std::cerr << "Error: best_child is null" << std::endl;
+			exit(1);
 			break;
 		}
 		current = best_child;
     }
+	auto stop = std::chrono::high_resolution_clock::now();
+	// std::cout << "Selection: " << std::chrono::duration_cast<std::chrono::microseconds>(stop - start_time).count() << " microseconds for " << traversals << " traversals" << std::endl;
+
 	return current;
 }
 
 float MCTS::expand(Node* node){
-	// printf("Expanding...\n");
-	
 	// convert board to input state
-	Board board = Board(node->getFen());
+	Environment board = Environment(node->getFen());
 	std::array<boolBoard, 19> inputState = board.boardToInput();
 	
 	// outputs
@@ -74,15 +85,13 @@ float MCTS::expand(Node* node){
 	float output_value = 0.0;
 
 	// send input to neural network
-	this->nn.predict(inputState, output_probs, output_value);
+	this->nn->predict(inputState, output_probs, output_value);
 
 	// output to moves
 	std::vector<thc::Move> legal_moves;
 	board.getLegalMoves(legal_moves);
 	
 	std::map<thc::Move, float> moveProbs = board.outputProbsToMoves(output_probs, legal_moves);
-
-	// std::cout << "legal moves: " << legal_moves.size() << std::endl;
 
 	// add nodes for every move
 	for (int i = 0; i < (int)legal_moves.size(); i++) {
@@ -119,9 +128,14 @@ Node* MCTS::getRoot() {
 	return this->root;
 }
 
+void MCTS::setRoot(Node *newRoot){
+	delete this->root;
+	this->root = newRoot;
+}
+
 int MCTS::getTreeDepth(Node* root) {
 	// recursive function of getting height of the tree
-	if (root->is_leaf()) {
+	if (root->isLeaf()) {
 		return 0;
 	}
 	int max_depth = 0;

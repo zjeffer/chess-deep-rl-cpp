@@ -1,6 +1,9 @@
 #include "node.hh"
 #include <string.h>
 #include <math.h>
+#include <vector>
+#include <chrono>
+#include <iostream>
 
 Node::Node(std::string fen, Node* parent, thc::Move action, float prior) {
 	this->fen = fen;
@@ -9,7 +12,7 @@ Node::Node(std::string fen, Node* parent, thc::Move action, float prior) {
 	this->prior = prior;
 
 	this->visit_count = 0;
-	this->value = 0;
+	this->value = 0.0;
 }
 
 Node::Node() : Node("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", nullptr, thc::Move(), 1.0) {
@@ -17,7 +20,6 @@ Node::Node() : Node("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 
 }
 
 Node::~Node() {
-	// delete this->parent;
 	for (int i = 0; i < (int)this->children.size(); i++) {
         delete this->children[i];
     }
@@ -53,7 +55,7 @@ void Node::add_child(Node* child) {
 }
 
 
-bool Node::is_leaf() {
+bool Node::isLeaf() {
     return this->children.size() == 0;
 }
 
@@ -97,7 +99,7 @@ float Node::getQ(){
 
 float Node::getUCB(){
 	if (this->parent == nullptr){
-		return 0;
+		return 0.0;
 	}
 	float exploration_rate = log((1 + this->parent->visit_count + 20000) / 20000) + 2;
 	return exploration_rate * this->prior * (sqrt(this->parent->visit_count) / (1 + this->visit_count));
@@ -105,10 +107,27 @@ float Node::getUCB(){
 
 bool Node::getPlayer(){
 	// parse the fen and return the current player
-	// TODO: implement this
-	return true;
+	int i = 0;
+	while (this->fen[i] != ' '){
+		i++;
+	}
+
+	return this->fen[i+1] == 'w';
 }
 
 thc::Move Node::getAction(){
 	return this->action;
+}
+
+std::vector<MoveProb> Node::getProbs(){
+	std::vector<MoveProb> probs;
+
+	for (int i = 0; i < (int)this->children.size(); i++){
+		MoveProb mp;
+		mp.move = this->children[i]->getAction();
+		mp.prob = (float)this->children[i]->getVisitCount() / (float)this->getVisitCount();
+		probs.push_back(mp);
+	}
+
+	return probs;
 }

@@ -1,24 +1,26 @@
+#include "environment.hh"
 #include "mcts.hh"
-#include "board.hh"
+#include "game.hh"
+#include "neuralnet.hh"
 #include <iostream>
 
 void test_MCTS(){
-	Board board = Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-	std::cout << board.getFen() << std::endl;
+	Environment env = Environment();
+	std::cout << env.getFen() << std::endl;
 
 	// test mcts tree
-	MCTS mcts = MCTS(new Node());
+	MCTS mcts = MCTS(new Node(), new NeuralNetwork());
 
 	// run sims
-	mcts.run_simulations(2000);
+	mcts.run_simulations(1000);
 
 	// show actions of root
 	Node* root = mcts.getRoot();
 	std::vector<Node*> nodes = root->getChildren();
-	thc::ChessRules cr = board.getChessRules();
-	printf("Possible moves in state %s: \n", board.getFen().c_str());
+	thc::ChessRules* cr = env.getRules();
+	printf("Possible moves in state %s: \n", env.getFen().c_str());
 	for (int i = 0; i < (int)nodes.size(); i++) {
-		printf("%s \t Prior: %f \t Q: %f \t U: %f\n", nodes[i]->getAction().NaturalOut(&cr).c_str(), nodes[i]->getPrior(), nodes[i]->getQ(), nodes[i]->getUCB());
+		printf("%s \t Prior: %f \t Q: %f \t U: %f\n", nodes[i]->getAction().NaturalOut(cr).c_str(), nodes[i]->getPrior(), nodes[i]->getQ(), nodes[i]->getUCB());
 	}
 }
 
@@ -28,11 +30,25 @@ void test_NN(){
 	std::array<floatBoard, 73> output_probs = {};
 	float output_value = 0.0;
 	// fill input
-	Board board = Board();
+	Environment board = Environment();
+
+	input = board.boardToInput();
+
+	// print board
+	for (int i = 0; i < 19; i++) {
+		for (int j = 0; j < 8; j++){
+			for(int k = 0; k < 8; k++){
+				std::cout << input[i].board[j][k];
+			}
+			std::cout << std::endl;
+		}
+		std::cout << std::endl;
+	}
 
 	// predict
 	nn.predict(input, output_probs, output_value);
-	
+	nn.predict(input, output_probs, output_value);
+	nn.predict(input, output_probs, output_value);
 }
 
 int main(int argc, char** argv) {
@@ -41,7 +57,11 @@ int main(int argc, char** argv) {
 	// test_MCTS();
 
 	// test neural network:
-	test_NN();
+	// test_NN();
+
+	// play one game
+	Game game = Game();
+	game.playGame();
 	
 
 	return 0;

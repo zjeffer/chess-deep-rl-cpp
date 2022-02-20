@@ -6,6 +6,11 @@
 #include <vector>
 #include <string>
 
+struct MoveProb {
+	thc::Move move;
+	float prob;
+};
+
 class Node {
 public:
 	Node(std::string fen, Node* parent, thc::Move action, float prior);
@@ -22,7 +27,7 @@ public:
 	Node* getChild(std::string fen);
 	void add_child(Node* child);
 
-	bool is_leaf();
+	bool isLeaf();
 
 	int getVisitCount();
 	void incrementVisit();
@@ -42,6 +47,7 @@ public:
 
 	thc::Move getAction();
 
+	std::vector<MoveProb> getProbs();
 
 private:
 	std::string fen;

@@ -1,31 +1,31 @@
 #ifndef mcts_hh
 #define mcts_hh
 
-#include "node.hh"
 #include "neuralnet.hh"
+#include "node.hh"
 
 class MCTS {
-   public:
-    MCTS(Node* root);
+  public:
+    MCTS(Node *root, NeuralNetwork *nn);
     ~MCTS();
 
     void run_simulations(int num_simulations);
 
-	Node* select(Node* root);
+    Node *select(Node *root);
 
-	float expand(Node* node);
+    float expand(Node *node);
 
-	void backpropagate(Node* node, float value);
+    void backpropagate(Node *node, float value);
 
-    Node* getRoot();
+    Node *getRoot();
+    void setRoot(Node *newRoot);
 
-    static int getTreeDepth(Node* root);
+    static int getTreeDepth(Node *root);
 
+  private:
+    Node *root;
 
-   private:
-    Node* root;
-
-    NeuralNetwork nn;
+    NeuralNetwork *nn;
 };
 
 #endif /* mcts_hh */
