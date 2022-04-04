@@ -6,9 +6,13 @@ set(CMAKE_PREFIX_PATH /usr/include/libtorch)
 find_package(Torch REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
-add_executable(${PROJECT_NAME} src/main.cc src/mcts.cc src/node.cc src/chess/thc.cc src/neuralnet.cc src/mapper.cc src/game.cc src/environment.cc src/agent.cc)
+file (GLOB SOURCE_FILES 
+  ${PROJECT_SOURCE_DIR}/src/*.cc
+  ${PROJECT_SOURCE_DIR}/src/chess/*.cc)
+
+add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}")
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 
 # The following code block is suggested to be used on Windows.
 # According to https://github.com/pytorch/pytorch/issues/25457,
