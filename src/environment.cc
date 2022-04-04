@@ -16,7 +16,7 @@ Environment::Environment() : Environment(thc::ChessRules()) {
 }
 
 thc::ChessRules* Environment::getRules() {
-	return &this->rules;
+	return &(this->rules);
 }
 
 bool Environment::isGameOver() {
@@ -76,14 +76,14 @@ std::array<boolBoard, 19> Environment::boardToInput() {
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
             // player's turn
-            input[0].board[i][j] = this->getRules()->WhiteToPlay();
+            input[0].board[i][j] = this->rules.WhiteToPlay();
             // castling rights
-            input[1].board[i][j] = this->getRules()->wqueen_allowed();
-            input[2].board[i][j] = this->getRules()->wking_allowed();
-            input[3].board[i][j] = this->getRules()->bqueen_allowed();
-            input[4].board[i][j] = this->getRules()->bking_allowed();
+            input[1].board[i][j] = this->rules.wqueen_allowed();
+            input[2].board[i][j] = this->rules.wking_allowed();
+            input[3].board[i][j] = this->rules.bqueen_allowed();
+            input[4].board[i][j] = this->rules.bking_allowed();
             // repitition counter
-            input[5].board[i][j] = this->getRules()->GetRepetitionCount() > 3;
+            input[5].board[i][j] = this->rules.GetRepetitionCount() > 3;
         }
     }
 
@@ -151,57 +151,68 @@ std::map<thc::Move, float> Environment::outputProbsToMoves(std::array<floatBoard
     std::map<thc::Move, float> moves = {};
 
     for (int i = 0; i < (int)legalMoves.size(); i++) {
-        thc::Move move = legalMoves[i];
+        std::tuple<int, int, int> tpl = this->moveToPlaneIndex(legalMoves[i]);
+        moves[legalMoves[i]] = outputProbs[std::get<0>(tpl)].board[std::get<1>(tpl)][std::get<2>(tpl)];
+    }
+    return moves;
+}
 
-        char piece = this->getRules()->squares[move.src];
-        int plane_index = 0;
-        int direction = 0;
 
-        if (piece == ' ') {
-            perror("No piece on that square!");
-            exit(1);
-        }
+std::array<floatBoard, 73> Environment::movesToOutputProbs(std::vector<MoveProb> moves){
+    std::array<floatBoard, 73> output;
+    for (MoveProb move : moves){
+        std::tuple<int, int, int> tpl = this->moveToPlaneIndex(move.move);
+        output[std::get<0>(tpl)].board[std::get<1>(tpl)][std::get<2>(tpl)] = move.prob;
+    }
+    return output;
+}
 
-        if (move.special >= thc::SPECIAL_PROMOTION_ROOK and
-            move.special <= thc::SPECIAL_PROMOTION_KNIGHT) {
-            // get directions
-            direction = Mapper::getUnderpromotionDirection(move.src, move.dst);
+std::tuple<int, int, int> Environment::moveToPlaneIndex(thc::Move move){
+    char piece = this->getRules()->squares[move.src];
+    int plane_index = -1;
+    int direction = 0;
 
-            // get type of special move
-            int promotion_type;
-            if (move.special == thc::SPECIAL_PROMOTION_KNIGHT) {
-                promotion_type = UnderPromotion::KNIGHT;
-            } else if (move.special == thc::SPECIAL_PROMOTION_BISHOP) {
-                promotion_type = UnderPromotion::BISHOP;
-            } else if (move.special == thc::SPECIAL_PROMOTION_ROOK) {
-                promotion_type = UnderPromotion::ROOK;
-            } else {
-                printf("Unhandled promotion type: %d\n", move.special);
-            }
-
-            plane_index = mapper[promotion_type][1 - direction];
-        } else if (tolower(this->getRules()->squares[move.src]) == 'n') {
-            // get the correct knight move
-            direction = Mapper::getKnightDirection(move.src, move.dst);
-            plane_index = mapper[KnightMove::NORTH_LEFT + direction][0];
-        } else {
-            // get the correct direction
-            std::tuple<int, int> tuple =
-                Mapper::getQueenDirection(move.src, move.dst);
-            plane_index = mapper[std::get<0>(tuple)][std::get<1>(tuple)];
-        }
-
-        if (plane_index < 0 or plane_index > 72) {
-            printf("Plane index: %d\n", plane_index);
-            perror("Plane index out of bounds!");
-            exit(1);
-        }
-
-        int row = move.src / 8;
-        int col = move.src % 8;
-        // create moveProb obj
-        moves[move] = outputProbs[plane_index].board[row][col];
+    if (piece == ' ') {
+        printf("No piece on that square!\n");
+        exit(EXIT_FAILURE);
     }
 
-    return moves;
+    if (move.special >= thc::SPECIAL_PROMOTION_ROOK and
+        move.special <= thc::SPECIAL_PROMOTION_KNIGHT) {
+        // get directions
+        direction = Mapper::getUnderpromotionDirection(move.src, move.dst);
+
+        // get type of special move
+        int promotion_type;
+        if (move.special == thc::SPECIAL_PROMOTION_KNIGHT) {
+            promotion_type = UnderPromotion::KNIGHT;
+        } else if (move.special == thc::SPECIAL_PROMOTION_BISHOP) {
+            promotion_type = UnderPromotion::BISHOP;
+        } else if (move.special == thc::SPECIAL_PROMOTION_ROOK) {
+            promotion_type = UnderPromotion::ROOK;
+        } else {
+            printf("Unhandled promotion type: %d\n", move.special);
+        }
+
+        plane_index = mapper[promotion_type][1 - direction];
+    } else if (tolower(this->getRules()->squares[move.src]) == 'n') {
+        // get the correct knight move
+        direction = Mapper::getKnightDirection(move.src, move.dst);
+        plane_index = mapper[KnightMove::NORTH_LEFT + direction][0];
+    } else {
+        // get the correct direction
+        std::tuple<int, int> tuple =
+            Mapper::getQueenDirection(move.src, move.dst);
+        plane_index = mapper[std::get<0>(tuple)][std::get<1>(tuple)];
+    }
+
+    if (plane_index < 0 or plane_index > 72) {
+        printf("Plane index: %d\n", plane_index);
+        perror("Plane index out of bounds!");
+        exit(EXIT_FAILURE);
+    }
+
+    int row = move.src / 8;
+    int col = move.src % 8;
+    return std::make_tuple(plane_index, row, col);
 }

@@ -5,14 +5,8 @@
 #include <array>
 #include "map"
 #include "mapper.hh"
+#include "types.hh"
 
-struct boolBoard {
-	std::array<std::array<bool, 8>, 8> board {};
-};
-
-struct floatBoard {
-	std::array<std::array<float, 8>, 8> board {};
-};
 
 class Environment {
 	public:
@@ -37,9 +31,36 @@ class Environment {
 
 		thc::ChessRules* getRules();
 
+		/**
+		 * @brief Convert the current board to an input interpretable by the model
+		 * 
+		 * @return std::array<boolBoard, 19> 
+		 */
 		std::array<boolBoard, 19> boardToInput();
 
+		/**
+		 * @brief For all legal moves, add the move and their probability to a dictionary
+		 * 
+		 * @param outputProbs 
+		 * @param legalMoves 
+		 * @return std::map<thc::Move, float> 
+		 */
 		std::map<thc::Move, float> outputProbsToMoves(std::array<floatBoard, 73> &outputProbs, std::vector<thc::Move> legalMoves);
+
+		/**
+		 * @brief Convert a list of moves to a policy output vector
+		 * 
+		 * @param moves 
+		 * @return std::array<floatBoard, 73> 
+		 */
+		std::array<floatBoard, 73> movesToOutputProbs(std::vector<MoveProb> moves);
+
+		/**
+		 * @brief Convert a move to a plane index, the row, and column on the board
+		 * 
+		 * @return std::tuple<int, int, int> 
+		 */
+		std::tuple<int, int, int> moveToPlaneIndex(thc::Move);
 
 		void getLegalMoves(std::vector<thc::Move> &moves);
 

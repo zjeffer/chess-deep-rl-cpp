@@ -40,7 +40,7 @@ int Mapper::getUnderpromotionDirection(int src, int dst) {
         direction = diff + 8;
     } else {
         perror("Underpromotion: destination square not on last or first rank");
-		exit(1);
+		exit(EXIT_FAILURE);
     }
     return direction;
 }
@@ -56,7 +56,7 @@ int Mapper::getKnightDirection(int src, int dst) {
     }
     if (direction == -1) {
         perror("Knight direction: not in list?");
-		exit(1);
+		exit(EXIT_FAILURE);
     }
     return direction;
 }
@@ -99,7 +99,7 @@ std::tuple<int, int> Mapper::getQueenDirection(int src, int dst) {
         distance = abs(int(diff / 8)) + 1;
     } else {
         perror("Invalid Queen-like move");
-		exit(1);
+		exit(EXIT_FAILURE);
     }
     return std::make_tuple(direction, distance);
 }

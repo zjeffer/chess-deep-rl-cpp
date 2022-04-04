@@ -12,7 +12,7 @@ void test_MCTS(){
 	MCTS mcts = MCTS(new Node(), new NeuralNetwork());
 
 	// run sims
-	mcts.run_simulations(1000);
+	mcts.run_simulations(400);
 
 	// show actions of root
 	Node* root = mcts.getRoot();
@@ -51,6 +51,37 @@ void test_NN(){
 	nn.predict(input, output_probs, output_value);
 }
 
+void test_Train(){
+	NeuralNetwork nn = NeuralNetwork();
+
+	ChessDataSet train_set = ChessDataSet("memory");
+	int train_set_size = train_set.size().value();
+	int batch_size = 64;
+	
+	// data loader
+	std::unique_ptr<torch::data::StatelessDataLoader<ChessDataSet, torch::data::samplers::SequentialSampler>> data_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(std::move(train_set), 8);
+
+	// optimizer
+	torch::optim::Adam optimizer(nn.parameters(), 0.01);
+	
+	nn.train(*data_loader, optimizer, batch_size);
+}
+
+int playGame(int argc, char** argv){
+	int amount_of_sims = 100;
+	if (argc == 2) {
+		try {
+			amount_of_sims = std::stoi(argv[1]);
+		} catch (std::invalid_argument) {
+			std::cerr << "Invalid argument" << std::endl;
+			exit(EXIT_FAILURE);
+		}
+	}
+	// play one game
+	Game game = Game(amount_of_sims);
+	return game.playGame();
+}
+
 int main(int argc, char** argv) {
 
 	// test mcts simulations:
@@ -59,10 +90,11 @@ int main(int argc, char** argv) {
 	// test neural network:
 	// test_NN();
 
-	// play one game
-	Game game = Game();
-	game.playGame();
-	
+	// try training
+	test_Train();
+
+	// play chess
+	// int winner = playGame(argc, argv);
 
 	return 0;
 }

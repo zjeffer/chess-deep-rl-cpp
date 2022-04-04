@@ -5,11 +5,8 @@
 #include "chess/thc.hh"
 #include <vector>
 #include <string>
+#include "types.hh"
 
-struct MoveProb {
-	thc::Move move;
-	float prob;
-};
 
 class Node {
 public:

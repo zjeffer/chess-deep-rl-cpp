@@ -34,7 +34,7 @@ void MCTS::run_simulations(int num_simulations) {
 		// backpropagation
 		backpropagate(leaf, value);
 	}
-	printf("Tree depth: %d\n", getTreeDepth(this->root));
+	// printf("Tree depth: %d\n", getTreeDepth(this->root));
 }
 
 Node* MCTS::select(Node* root){
@@ -48,13 +48,13 @@ Node* MCTS::select(Node* root){
 		std::vector<Node*> children = current->getChildren();
 		// start with random child as best child
 		if (children.size() == 0) {
-			// TODO
-			exit(1);
+			perror("No children");
+			exit(EXIT_FAILURE);
 		}
 		Node* best_child = children[rand() % children.size()];
 		float best_score = -1;
-		// std::cout << "Children: " << children.size() << std::endl;
 		for (int i = 0; i < (int)children.size(); i++) {
+			std::cout << "Child " << i << ": " << children[i]->getQ() << " + " << children[i]->getUCB() << std::endl;
 			Node* child = children[i];
 			float score = child->getPUCTScore();
 			if (score > best_score) {
@@ -63,9 +63,8 @@ Node* MCTS::select(Node* root){
 			}
 		}
 		if (best_child == nullptr) {
-			std::cerr << "Error: best_child is null" << std::endl;
-			exit(1);
-			break;
+			perror("Error: best_child is null");
+			exit(EXIT_FAILURE);
 		}
 		current = best_child;
     }

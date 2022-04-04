@@ -6,18 +6,11 @@
 #include "chess/thc.hh"
 
 #define MAX_MOVES 100
-#define AMOUNT_OF_SIMULATIONS 400
 
-struct MemoryElement {
-	std::string state;
-	std::vector<MoveProb> probs;
-	int winner;
-};
 
 class Game {
   public:
-	Game();
-    Game(Environment env, Agent white, Agent black);
+    Game(int simulations = 400, Environment env = Environment(), Agent white = Agent("white"), Agent black = Agent("black"));
 
     int playGame();
 
@@ -32,6 +25,7 @@ class Game {
 	void reset();
 
   private:
+	int simulations;
 	Environment env;
 	
 	Agent white;
@@ -40,7 +34,8 @@ class Game {
 	thc::Move *previous_moves;
 
 	std::vector<MemoryElement> memory;
-
+	
+	std::string game_id;
 };
 
 #endif // GAME_HH

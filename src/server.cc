@@ -2,7 +2,6 @@
 
 
 
-
 Server::Server(uint16_t port){
 	int server_fd, new_socket, valread;
 
@@ -12,7 +11,7 @@ Server::Server(uint16_t port){
 	int addrlen = sizeof(address);
 	char buffer[1024] = {0};
 
-	char* hello = "Hello from server";
+	std::string hello = "Hello from server";
 
 	// Creating socket file descriptor
 	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) = 0){
@@ -49,7 +48,7 @@ Server::Server(uint16_t port){
     }
     valread = read( new_socket , buffer, 1024);
     printf("%s\n",buffer );
-    send(new_socket , hello , strlen(hello) , 0 );
-    printf("Hello message sent\n");	
+    /* send(new_socket , hello , strlen(hello) , 0 );
+    printf("Hello message sent\n");	 */
 }
 

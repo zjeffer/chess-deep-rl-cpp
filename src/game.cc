@@ -1,18 +1,22 @@
 #include "game.hh"
 #include "node.hh"
-#include <algorithm>
+#include "dataset.hh"
+#include <random>
 
-Game::Game(Environment env, Agent white, Agent black) {
+Game::Game(int simulations, Environment env, Agent white, Agent black) {
+	this->simulations = simulations;
 	this->env = env;
 	this->white = white;
 	this->black = black;
 
 	this->previous_moves = new thc::Move[2];
-}
 
-
-Game::Game() : Game(Environment(), Agent("white"), Agent("black")) {
+	// create random id
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> dis(0, 999999);
 	
+	this->game_id = "game-" + std::to_string(dis(gen));
 }
 
 void Game::reset() {
@@ -63,7 +67,7 @@ void Game::play_move(){
 	currentPlayer->updateMCTS(newRoot);
 
 	// run the sims
-	currentPlayer->getMCTS()->run_simulations(AMOUNT_OF_SIMULATIONS);
+	currentPlayer->getMCTS()->run_simulations(this->simulations);
 
 	std::vector<Node*> childNodes = currentPlayer->getMCTS()->getRoot()->getChildren();
 
@@ -77,11 +81,11 @@ void Game::play_move(){
 	this->saveToMemory(element);
 
 	// print moves
-	std::cout << "Moves: " << std::endl;
+	/* std::cout << "Moves: " << std::endl;
 	for (int i = 0; i < childNodes.size(); i++) {
 		thc::Move move = childNodes[i]->getAction();
 		std::cout << "Move " << i << ": " << move.NaturalOut(this->env.getRules()) << std::endl;
-	}
+	} */
 	
 	// create distribution of moves
 	/* 
@@ -101,7 +105,7 @@ void Game::play_move(){
 	// get move with max visit count
 	if ((int)childNodes.size() == 0){
 		std::cerr << "No moves available" << std::endl;
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	Node* current = childNodes[rand() % childNodes.size()];
 	int maxVisits = 0;
@@ -118,14 +122,13 @@ void Game::play_move(){
 	this->previous_moves[0] = this->previous_moves[1];
 	this->previous_moves[1] = current->getAction();
 
-	this->env.makeMove(current->getAction());
+	std::cout << "Current prevmoves: " << this->previous_moves[0].src << "-" << this->previous_moves[0].dst << " and " << this->previous_moves[1].src << "-" << this->previous_moves[1].dst << std::endl;
 
-	std::cout << "Current prevmoves: " << this->previous_moves[0].NaturalOut(this->env.getRules()) << " and " << this->previous_moves[1].NaturalOut(this->env.getRules()) << std::endl;
+	this->env.makeMove(current->getAction());
 }
 
 void Game::saveToMemory(MemoryElement element) {
 	this->memory.push_back(element);
-
 }
 
 void Game::updateMemory(int winner){
@@ -134,17 +137,28 @@ void Game::updateMemory(int winner){
 	}
 }
 
+void memoryElementToData(MemoryElement *memory_element, ChessData *data) {
+	// convert state (string) to input (boolboards 19x8x8)
+	Environment env = Environment(memory_element->state);
+	data->input = env.boardToInput();
+
+	// prob dictionary to floatboards
+	data->policy = env.movesToOutputProbs(memory_element->probs);
+	// winner to float value
+	data->value = memory_element->winner;
+}
+
 void Game::memoryToFile(){
-	std::ofstream file;
-	file.open("memory.txt");
+	// convert MemoryElement to ChessData element
+	std::vector<ChessData> data;
 	for (int i = 0; i < (int)this->memory.size(); i++){
-		file << this->memory[i].state << " " << this->memory[i].winner << " ";
-		for (int j = 0; j < (int)this->memory[i].probs.size(); j++){
-			file << this->memory[i].probs[j].move.NaturalOut(this->env.getRules()) << " " << this->memory[i].probs[j].prob << " ";
-		}
-		file << std::endl;
+		ChessData chess_data;
+		memoryElementToData(&this->memory[i], &chess_data);
+		data.push_back(chess_data);
 	}
-	file.close();
+
+	ChessDataSet::write(this->game_id, data);
+
 	// reset memory
 	this->memory.clear();
 }
