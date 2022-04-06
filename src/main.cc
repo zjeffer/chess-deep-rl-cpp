@@ -54,17 +54,22 @@ void test_NN(){
 void test_Train(){
 	NeuralNetwork nn = NeuralNetwork();
 
-	ChessDataSet train_set = ChessDataSet("memory");
+	auto train_set = ChessDataSet("memory").map(torch::data::transforms::Stack<>());
 	int train_set_size = train_set.size().value();
 	int batch_size = 64;
 	
 	// data loader
-	std::unique_ptr<torch::data::StatelessDataLoader<ChessDataSet, torch::data::samplers::SequentialSampler>> data_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(std::move(train_set), 8);
+	auto data_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(std::move(train_set), 8);
 
 	// optimizer
 	torch::optim::Adam optimizer(nn.parameters(), 0.01);
+
+	for (auto& batch: *data_loader){
+		auto data = batch.data.to(torch::kCUDA);
+		auto target = batch.target.to(torch::kCUDA);
+	}
 	
-	nn.train(*data_loader, optimizer, batch_size);
+	// nn.train(*data_loader, optimizer, train_set_size);
 }
 
 int playGame(int argc, char** argv){

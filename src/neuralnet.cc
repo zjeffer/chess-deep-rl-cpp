@@ -172,7 +172,8 @@ void NeuralNetwork::predict(std::array<boolBoard, 19> &input, std::array<floatBo
     // std::cout << "output_value example: " << output_value << std::endl;
 }
 
-void NeuralNetwork::train(torch::data::StatelessDataLoader<ChessDataSet, torch::data::samplers::SequentialSampler> &loader, torch::optim::Optimizer &optimizer, int data_size) {
+template <typename DataLoader>
+void NeuralNetwork::train(DataLoader &loader, torch::optim::Optimizer &optimizer, int data_size) {
     int index = 0;
     float Loss = 0.0, Acc = 0.0;
 
@@ -208,4 +209,6 @@ void NeuralNetwork::train(torch::data::StatelessDataLoader<ChessDataSet, torch::
         }
         // TODO (https://github.com/pytorch/examples/blob/master/cpp/custom-dataset/custom-dataset.cpp)
     }
+
+    torch::save(this, "./models/model.pt");
 }

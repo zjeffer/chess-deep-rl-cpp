@@ -10,6 +10,8 @@
 class ChessDataSet : public torch::data::datasets::Dataset<ChessDataSet> {
   public:
 	ChessDataSet(std::string path);
+	
+	void createDataset(std::string path);
 
 	void addDataFromFile(std::string file_name);
 

@@ -1,8 +1,13 @@
 #include "dataset.hh"
 #include <filesystem>
 #include <iostream>
+#include <fstream>
 
 ChessDataSet::ChessDataSet(std::string path) {
+	this->createDataset(path);
+}
+
+void ChessDataSet::createDataset(std::string path){
 	for (auto& p : std::filesystem::directory_iterator(path)) {
 		std::string file_name = p.path().string();
 		std::cout << "Reading file: " << file_name << std::endl;
@@ -11,20 +16,19 @@ ChessDataSet::ChessDataSet(std::string path) {
 }
 
 void ChessDataSet::addDataFromFile(std::string file_name) {
-	FILE *file;
+	std::cout << "Adding data from file: " << file_name << std::endl;
 	struct ChessData chessData;
-
-	file = fopen(file_name.c_str(), "r");
-	if (file == NULL) {
-		perror("Error opening file when creating ChessDataSet!");
-		exit(EXIT_FAILURE);
-	}
 	
-	while(fread(&chessData, sizeof(struct ChessData), 1, file)) {
-		printf("%f\n", chessData.value);
+	std::ifstream file_stream(file_name);
+	while(file_stream.read((char*)&chessData, sizeof(struct ChessData))) {
+		printf("%d %d %f\n", chessData.input.size(), chessData.policy.size(), chessData.value);
+		std::cout << "Pushing to data" << std::endl;
+		std::cout << this->data.size() << std::endl;
+
 		this->data.push_back(chessData);
+		printf("Pushed to data\n");
 	}
-	fclose(file);
+	file_stream.close();
 }
 
 void ChessDataSet::write(std::string filename, std::vector<ChessData> data) {

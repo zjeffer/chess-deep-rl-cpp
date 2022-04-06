@@ -1,16 +1,16 @@
 #ifndef NEURALNET_HH
 #define NEURALNET_HH
 
-#include "environment.hh"
 #include "dataset.hh"
+#include "environment.hh"
 
 #include <ATen/core/TensorBody.h>
 #include <array>
 #include <torch/csrc/api/include/torch/torch.h>
-#include <torch/script.h>
-#include <torch/torch.h>
 #include <torch/data/dataloader/stateful.h>
 #include <torch/nn/modules/conv.h>
+#include <torch/script.h>
+#include <torch/torch.h>
 #include <vector>
 
 #include <torch/nn/module.h>
@@ -21,7 +21,6 @@
 #include <torch/nn/options/batchnorm.h>
 #include <torch/nn/options/conv.h>
 #include <torch/nn/options/linear.h>
-
 
 class NeuralNetwork : public torch::nn::Module {
   public:
@@ -34,7 +33,8 @@ class NeuralNetwork : public torch::nn::Module {
 
     torch::Tensor forward(torch::Tensor x);
 
-    void train(torch::data::StatelessDataLoader<ChessDataSet, torch::data::samplers::SequentialSampler> &loader, torch::optim::Optimizer& optimizer, int data_size);
+    template <typename DataLoader>
+    void train(DataLoader &loader, torch::optim::Optimizer &optimizer, int data_size);
 
   private:
     // set the device depending on if cuda is available
@@ -46,7 +46,6 @@ class NeuralNetwork : public torch::nn::Module {
 
     torch::nn::Sequential build_policy_head();
     torch::nn::Sequential build_value_head();
-
 };
 
 #endif // NEURALNET_HH
