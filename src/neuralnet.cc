@@ -203,9 +203,7 @@ void NeuralNetwork::train(DataLoader &loader, torch::optim::Optimizer &optimizer
         if (index++ % 2 == 0) {
             auto end = std::min(data_size, (index + 1) * 8);
 
-            std::cout << "Train"
-                      << "\tLoss: " << Loss / end << "\tAcc: " << Acc / end
-                      << std::endl;
+            std::cout << "Train" << "\tLoss: " << Loss / end << "\tAcc: " << Acc / end << std::endl;
         }
         // TODO (https://github.com/pytorch/examples/blob/master/cpp/custom-dataset/custom-dataset.cpp)
     }

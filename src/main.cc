@@ -73,7 +73,7 @@ void test_Train(){
 }
 
 int playGame(int argc, char** argv){
-	int amount_of_sims = 100;
+	int amount_of_sims = 10;
 	if (argc == 2) {
 		try {
 			amount_of_sims = std::stoi(argv[1]);
@@ -96,10 +96,10 @@ int main(int argc, char** argv) {
 	// test_NN();
 
 	// try training
-	test_Train();
+	// test_Train();
 
 	// play chess
-	// int winner = playGame(argc, argv);
+	int winner = playGame(argc, argv);
 
 	return 0;
 }

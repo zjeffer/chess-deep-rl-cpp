@@ -16,7 +16,8 @@ Game::Game(int simulations, Environment env, Agent white, Agent black) {
 	std::mt19937 gen(rd());
 	std::uniform_int_distribution<> dis(0, 999999);
 	
-	this->game_id = "game-" + std::to_string(dis(gen));
+	std::string current_date = std::to_string(std::time(nullptr));
+	this->game_id = "game-" + current_date + "-" + std::to_string(dis(gen));
 }
 
 void Game::reset() {

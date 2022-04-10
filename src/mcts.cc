@@ -54,7 +54,7 @@ Node* MCTS::select(Node* root){
 		Node* best_child = children[rand() % children.size()];
 		float best_score = -1;
 		for (int i = 0; i < (int)children.size(); i++) {
-			std::cout << "Child " << i << ": " << children[i]->getQ() << " + " << children[i]->getUCB() << std::endl;
+			// std::cout << "Child " << i << ": " << children[i]->getQ() << " + " << children[i]->getUCB() << std::endl;
 			Node* child = children[i];
 			float score = child->getPUCTScore();
 			if (score > best_score) {
