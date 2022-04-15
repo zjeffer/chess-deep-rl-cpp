@@ -44,8 +44,10 @@ class NeuralNetwork : public torch::nn::Module {
     torch::nn::Linear policy_output = nullptr, lin2 = nullptr, lin3 = nullptr;
     torch::nn::BatchNorm2d bn1 = nullptr, bn2 = nullptr;
 
-    torch::nn::Sequential build_policy_head();
-    torch::nn::Sequential build_value_head();
+    void build_policy_head();
+    void build_value_head();
+
+    torch::nn::Sequential policy_head = nullptr, value_head = nullptr;
 };
 
 #endif // NEURALNET_HH

@@ -99,6 +99,7 @@ float Node::getQ(){
 
 float Node::getUCB(){
 	if (this->parent == nullptr){
+		std::cerr << "parent is null" << std::endl;
 		return 0.0;
 	}
 	float exploration_rate = log((1 + this->parent->visit_count + 20000) / 20000) + 2;

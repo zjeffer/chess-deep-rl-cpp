@@ -1,13 +1,10 @@
 #include "agent.hh"
 
-Agent::Agent() {
-    this->nn = new NeuralNetwork();
+Agent::Agent(std::string name, NeuralNetwork* nn) {
+    this->nn = nn;
     this->mcts = new MCTS(new Node(), nn);
 }
 
-Agent::Agent(std::string name): Agent() {
-    this->name = name;
-}
 
 MCTS* Agent::getMCTS() {
     return this->mcts;

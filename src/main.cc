@@ -59,21 +59,26 @@ void test_Train(){
 	int batch_size = 64;
 	
 	// data loader
+	std::cout << "Creating data loader" << std::endl;
 	auto data_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(std::move(train_set), 8);
+	std::cout << "Data loader created" << std::endl;
 
 	// optimizer
 	torch::optim::Adam optimizer(nn.parameters(), 0.01);
 
+	std::cout << "Starting training" << std::endl;
 	for (auto& batch: *data_loader){
+		std::cout << "Batch" << std::endl;
 		auto data = batch.data.to(torch::kCUDA);
 		auto target = batch.target.to(torch::kCUDA);
 	}
+	std::cout << "Training finished" << std::endl;
 	
 	// nn.train(*data_loader, optimizer, train_set_size);
 }
 
 int playGame(int argc, char** argv){
-	int amount_of_sims = 10;
+	int amount_of_sims = 400;
 	if (argc == 2) {
 		try {
 			amount_of_sims = std::stoi(argv[1]);
@@ -82,8 +87,14 @@ int playGame(int argc, char** argv){
 			exit(EXIT_FAILURE);
 		}
 	}
+	// create the NN
+	NeuralNetwork* nn = new NeuralNetwork();
+	// create the agents, both using the same NN for selfplay
+	Agent white = Agent("white", nn);
+	Agent black = Agent("black", nn);
+
 	// play one game
-	Game game = Game(amount_of_sims);
+	Game game = Game(amount_of_sims, Environment(), white, black);
 	return game.playGame();
 }
 

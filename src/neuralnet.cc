@@ -75,22 +75,24 @@ void NeuralNetwork::buildNetwork() {
 
     // move this to device
     this->to(device);
+
+    this->build_policy_head();
+    this->build_value_head();
 }
 
-torch::nn::Sequential NeuralNetwork::build_policy_head() {
-    torch::nn::Sequential policy_head = torch::nn::Sequential(
+void NeuralNetwork::build_policy_head() {
+    this->policy_head = torch::nn::Sequential(
         policy_conv,
         torch::nn::BatchNorm2d(POLICY_FILTERS),
         torch::nn::ReLU(),
         torch::nn::Flatten(),
         policy_output,
         torch::nn::ReLU());
-    policy_head->to(device);
-    return policy_head;
+    this->policy_head->to(device);
 }
 
-torch::nn::Sequential NeuralNetwork::build_value_head() {
-    torch::nn::Sequential value_head = torch::nn::Sequential(
+void NeuralNetwork::build_value_head() {
+        this->value_head = torch::nn::Sequential(
         value_conv,
         torch::nn::BatchNorm2d(VALUE_FILTERS),
         torch::nn::ReLU(),
@@ -99,8 +101,8 @@ torch::nn::Sequential NeuralNetwork::build_value_head() {
         torch::nn::ReLU(),
         lin3,
         torch::nn::Tanh());
-    value_head->to(this->device);
-    return value_head;
+    this->value_head->to(this->device);
+
 }
 
 torch::Tensor NeuralNetwork::forward(torch::Tensor x) {
@@ -116,11 +118,7 @@ torch::Tensor NeuralNetwork::forward(torch::Tensor x) {
         x = torch::relu(x);
     }
 
-    // add policy head and value head
-    torch::Tensor policy_output = this->build_policy_head()->forward(x);
-    torch::Tensor value_output = this->build_value_head()->forward(x);
-
-    return torch::cat({policy_output, value_output}, 1);
+    return torch::cat({this->policy_head->forward(x), this->value_head->forward(x)}, 1);
 }
 
 NeuralNetwork::NeuralNetwork() {
@@ -141,6 +139,7 @@ NeuralNetwork::NeuralNetwork() {
     // random input
     torch::Tensor input = torch::rand({1, 19, 8, 8});
     torch::Tensor output = this->forward(input);
+    std::cout << output.dim() << std::endl;
 }
 
 void NeuralNetwork::predict(std::array<boolBoard, 19> &input, std::array<floatBoard, 73> &output_probs, float &output_value) {

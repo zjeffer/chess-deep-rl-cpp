@@ -8,40 +8,47 @@ ChessDataSet::ChessDataSet(std::string path) {
 }
 
 void ChessDataSet::createDataset(std::string path){
+	std::vector<ChessDataTest> data_temp;
 	for (auto& p : std::filesystem::directory_iterator(path)) {
 		std::string filename = p.path().string();
 		std::cout << "Checking file " << filename << " ... ";
 		if (filename.find("game-") != std::string::npos) {
-			this->addDataFromFile(filename);
+			this->read(filename, &data_temp);
 			std::cout << "Added data from" << std::endl;
-			// std::cout << "Size so far: " << this->data.size() << std::endl;
+			std::cout << "Size so far: " << data_temp.size() << std::endl;
 		} else {
 			std::cout << "Skipping..." << std::endl;
 		}
 	}
+	for(int i = 0; i < (int)data_temp.size(); i++){
+		ChessData cd;
+		cd.input = data_temp[i].input;
+		cd.policy = data_temp[i].policy;
+		cd.value = data_temp[i].value;
+		this->data.push_back(cd);
+	}
+	std::cout << "Created dataset" << std::endl;
 }
 
-void ChessDataSet::addDataFromFile(std::string filename) {
+void ChessDataSet::read(std::string filename, std::vector<ChessDataTest>* data_temp) {
 	std::cout << "Adding data from file: " << filename << std::endl;
-	struct ChessData chessData;
+	struct ChessDataTest chessData;
 	
 	std::ifstream file_stream(filename);
 	while(file_stream.read((char*)&chessData, sizeof(struct ChessData))) {
-		// printf("%d %d %f\n", chessData.input.size(), chessData.policy.size(), chessData.value);
-		// std::cout << this->data.size() << std::endl;
 
-		struct ChessData new_data;
+		struct ChessDataTest new_data;
 		new_data.input = chessData.input;
 		new_data.policy = chessData.policy;
 		new_data.value = chessData.value;
 
-		this->data.push_back(new_data);
+		data_temp->push_back(new_data);
 	}
 	file_stream.close();
 	std::cout << "Closed file" << std::endl;
 }
 
-void ChessDataSet::write(std::string filename, std::vector<ChessData> data) {
+void ChessDataSet::write(std::string filename, std::vector<ChessDataTest> data) {
 	// write to memory/ folder
 	try {
 		std::filesystem::create_directory("memory");
@@ -53,8 +60,7 @@ void ChessDataSet::write(std::string filename, std::vector<ChessData> data) {
 	try {
 		std::ofstream file_stream("memory/" + filename, std::ios::out | std::ios::binary);
 		for (auto& d : data) {
-			d.data = d.data.to(torch::kCPU); // TODO
-			file_stream.write((char*)&d, sizeof(struct ChessData));
+			file_stream.write((char*)&d, sizeof(struct ChessDataTest));
 		}
 		file_stream.close();
 	} catch (std::filesystem::filesystem_error& e) {
@@ -64,13 +70,7 @@ void ChessDataSet::write(std::string filename, std::vector<ChessData> data) {
 }
 
 torch::data::Example<> ChessDataSet::get(size_t index) {
-	struct ChessData chessData = data[index];
-	return {
-		torch::from_blob(chessData.input.data(), {1, 19, 8, 8}), 
-		torch::cat({
-			torch::from_blob(chessData.policy.data(), {1, 73, 8, 8}), 
-			torch::tensor(chessData.value)
-		}, 1)};
+	return this->data[index];
 }
 
 torch::optional<size_t> ChessDataSet::size() const {

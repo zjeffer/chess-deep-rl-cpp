@@ -64,6 +64,6 @@ struct ChessDataTest {
 	std::array<floatBoard, 73> policy;
 	// second output: the value of the current position
 	float value;
-}
+};
 
 #endif // TYPES_HH

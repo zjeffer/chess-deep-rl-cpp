@@ -82,11 +82,12 @@ void Game::play_move(){
 	this->saveToMemory(element);
 
 	// print moves
-	/* std::cout << "Moves: " << std::endl;
+	std::cout << "Moves: " << std::endl;
 	for (int i = 0; i < childNodes.size(); i++) {
 		thc::Move move = childNodes[i]->getAction();
-		std::cout << "Move " << i << ": " << move.NaturalOut(this->env.getRules()) << std::endl;
-	} */
+		std::cout << "Move " << i << ": " << move.NaturalOut(this->env.getRules());
+		std::cout << " " << childNodes[i]->getVisitCount() << " visits" << std::endl;
+	}
 	
 	// create distribution of moves
 	/* 
@@ -100,8 +101,6 @@ void Game::play_move(){
 		current++;
 	} 
 	*/
-
-	// for now, pick best move  (TODO)
 	
 	// get move with max visit count
 	if ((int)childNodes.size() == 0){
@@ -111,7 +110,7 @@ void Game::play_move(){
 	Node* current = childNodes[rand() % childNodes.size()];
 	int maxVisits = 0;
 	for(int i = 0; i < (int)childNodes.size(); i++){
-		if (childNodes[i]->getVisitCount() > maxVisits){
+		if (childNodes[i]->getVisitCount() >= maxVisits){
 			maxVisits = childNodes[i]->getVisitCount();
 			current = childNodes[i];
 		}
@@ -138,7 +137,7 @@ void Game::updateMemory(int winner){
 	}
 }
 
-void memoryElementToData(MemoryElement *memory_element, ChessData *data) {
+void memoryElementToData(MemoryElement *memory_element, ChessDataTest *data) {
 	// convert state (string) to input (boolboards 19x8x8)
 	Environment env = Environment(memory_element->state);
 	data->input = env.boardToInput();
@@ -151,9 +150,9 @@ void memoryElementToData(MemoryElement *memory_element, ChessData *data) {
 
 void Game::memoryToFile(){
 	// convert MemoryElement to ChessData element
-	std::vector<ChessData> data;
+	std::vector<ChessDataTest> data;
 	for (int i = 0; i < (int)this->memory.size(); i++){
-		ChessData chess_data;
+		ChessDataTest chess_data;
 		memoryElementToData(&this->memory[i], &chess_data);
 		data.push_back(chess_data);
 	}

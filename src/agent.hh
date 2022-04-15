@@ -6,8 +6,7 @@
 
 class Agent {
 	public:
-		Agent();
-		Agent(std::string name);
+		Agent(std::string name = "", NeuralNetwork* nn = new NeuralNetwork());
 
 		MCTS* getMCTS();
 
