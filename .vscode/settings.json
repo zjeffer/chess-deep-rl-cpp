@@ -84,6 +84,8 @@
 		"*.ipp": "cpp",
 		"__nullptr": "cpp",
 		"*.rh": "cpp",
-		"filesystem": "cpp"
-	}
+		"filesystem": "cpp",
+		"*.inc": "cpp"
+	},
+	"C_Cpp.errorSquiggles": "Enabled"
 }

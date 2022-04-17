@@ -4,8 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/include/libtorch/include/torch/csrc/api/include/**",
-                "/usr/include/libtorch/**"
+                "/usr/include/libtorch/**",
+                "/usr/include/opencv4/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",
