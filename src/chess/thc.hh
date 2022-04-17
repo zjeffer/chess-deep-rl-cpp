@@ -618,7 +618,7 @@ public:
     void TestInternals();
 
 // Private stuff
-protected:
+// protected:
 
     // Generate a list of all possible moves in a position (including
     //  illegally "moving into check")
