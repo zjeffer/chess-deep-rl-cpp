@@ -1,8 +1,11 @@
+#include <iostream>
+#include <opencv2/opencv.hpp>
+
 #include "environment.hh"
 #include "mcts.hh"
 #include "game.hh"
 #include "neuralnet.hh"
-#include <iostream>
+
 
 void test_MCTS(){
 	Environment env = Environment();
@@ -26,19 +29,18 @@ void test_MCTS(){
 
 void test_NN(){
 	NeuralNetwork nn = NeuralNetwork();
-	std::array<boolBoard, 19> input = {};
 	std::array<floatBoard, 73> output_probs = {};
 	float output_value = 0.0;
 	// fill input
 	Environment board = Environment();
 
-	input = board.boardToInput();
+	torch::Tensor input = board.boardToInput();
 
 	// print board
-	for (int i = 0; i < 19; i++) {
+	for (int i = 0; i < 119; i++) {
 		for (int j = 0; j < 8; j++){
 			for(int k = 0; k < 8; k++){
-				std::cout << input[i].board[j][k];
+				std::cout << input[i][j][k];
 			}
 			std::cout << std::endl;
 		}
@@ -49,6 +51,61 @@ void test_NN(){
 	nn.predict(input, output_probs, output_value);
 	nn.predict(input, output_probs, output_value);
 	nn.predict(input, output_probs, output_value);
+}
+
+cv::Mat tensorToMat(const torch::Tensor &tensor){
+	// reshape 119x8x8 tensor to 952*8 image
+	torch::Tensor reshaped = torch::zeros({119*8, 8});
+	for (int plane = 0; plane < 119; plane++) {
+		for(int j = 0; j < 8; j++){
+			for(int k = 0; k < 8; k++){
+				reshaped[plane*8 + j][k] = 1;
+			}
+		}
+	}
+
+	// std::cout << reshaped << std::endl;
+
+    cv::Mat mat(
+		cv::Size{119*8, 8},
+		CV_8UC1,
+		reshaped.data_ptr<float>()
+	);
+	return mat.clone();
+}
+
+void test_input(){
+	Environment board = Environment();
+	// make some moves
+	std::vector<std::string> moveList = {
+		"e2e4", 
+		"e7e5",
+		"g1f3",
+		"b8c6",
+		"f1c4",
+		"f8c5"
+	};
+
+	for (std::string moveString : moveList){
+		thc::Move move;
+		if (move.TerseIn(board.getRules(), moveString.c_str())){
+			board.makeMove(move);
+		} else {
+			std::cerr << "Invalid move: " << moveString << std::endl;
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	// test board to input
+	std::cout << "Converting board to input state" << std::endl;
+	torch::Tensor input = board.boardToInput();
+	// std::cout << input << std::endl;
+
+	// tensor to image
+	std::cout << "Converting input to image" << std::endl;
+	cv::Mat mat = tensorToMat(input);
+	// std::cout << mat << std::endl;
+	cv::imwrite("output_test.png", mat);
 }
 
 void test_Train(){
@@ -110,7 +167,9 @@ int main(int argc, char** argv) {
 	// test_Train();
 
 	// play chess
-	int winner = playGame(argc, argv);
+	// int winner = playGame(argc, argv);
+
+	test_input();
 
 	return 0;
 }

@@ -24,7 +24,7 @@
 #define VALUE_FILTERS 1
 
 void NeuralNetwork::buildNetwork() {
-    input_conv = torch::nn::Conv2d(torch::nn::Conv2dOptions(19, CONV_FILTERS, 3).padding(1).stride(1));
+    input_conv = torch::nn::Conv2d(torch::nn::Conv2dOptions(119, CONV_FILTERS, 3).padding(1).stride(1));
     residual_conv = torch::nn::Conv2d(torch::nn::Conv2dOptions(CONV_FILTERS, CONV_FILTERS, 3).padding(1).stride(1));
     policy_conv = torch::nn::Conv2d(torch::nn::Conv2dOptions(CONV_FILTERS, POLICY_FILTERS, 1).stride(1));
     policy_output = torch::nn::Linear(POLICY_FILTERS * PLANE_SIZE * PLANE_SIZE, OUTPUT_SIZE);
@@ -137,16 +137,13 @@ NeuralNetwork::NeuralNetwork() {
     this->buildNetwork();
 
     // random input
-    torch::Tensor input = torch::rand({1, 19, 8, 8});
+    torch::Tensor input = torch::rand({1, 119, 8, 8});
     torch::Tensor output = this->forward(input);
     std::cout << output.dim() << std::endl;
 }
 
-void NeuralNetwork::predict(std::array<boolBoard, 19> &input, std::array<floatBoard, 73> &output_probs, float &output_value) {
-    // arrays to tensors
-    torch::Tensor input_tensor = torch::from_blob(input.data(), {1, 19, 8, 8});
-
-    torch::Tensor output_tensor = this->forward(input_tensor);
+void NeuralNetwork::predict(torch::Tensor &input, std::array<floatBoard, 73> &output_probs, float &output_value) {
+    torch::Tensor output_tensor = this->forward(input);
     // send tensor to cpu so we can access it
     output_tensor = output_tensor.to(torch::Device(torch::kCPU));
 

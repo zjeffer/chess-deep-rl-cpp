@@ -77,7 +77,7 @@ Node* MCTS::select(Node* root){
 float MCTS::expand(Node* node){
 	// convert board to input state
 	Environment board = Environment(node->getFen());
-	std::array<boolBoard, 19> inputState = board.boardToInput();
+	torch::Tensor inputState = board.boardToInput();
 	
 	// outputs
 	std::array<floatBoard, 73> output_probs;

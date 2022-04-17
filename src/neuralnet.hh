@@ -28,7 +28,7 @@ class NeuralNetwork : public torch::nn::Module {
 
     void buildNetwork();
 
-    void predict(std::array<boolBoard, 19> &input,
+    void predict(torch::Tensor &input,
                  std::array<floatBoard, 73> &output_probs, float &output_value);
 
     torch::Tensor forward(torch::Tensor x);

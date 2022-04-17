@@ -1,9 +1,9 @@
 #ifndef ENVIRONMENT_HH
 #define ENVIRONMENT_HH
 
-#include "chess/thc.hh"
 #include <array>
-#include "map"
+#include <map>
+#include "chess/thc.hh"
 #include "mapper.hh"
 #include "types.hh"
 
@@ -36,7 +36,7 @@ class Environment {
 		 * 
 		 * @return std::array<boolBoard, 19> 
 		 */
-		std::array<boolBoard, 19> boardToInput();
+		torch::Tensor boardToInput();
 
 		/**
 		 * @brief For all legal moves, add the move and their probability to a dictionary
@@ -68,7 +68,6 @@ class Environment {
 
 	private:
 		thc::ChessRules rules;
-		
 
 };
 

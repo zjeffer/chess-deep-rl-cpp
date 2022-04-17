@@ -137,24 +137,21 @@ void Game::updateMemory(int winner){
 	}
 }
 
-void memoryElementToData(MemoryElement *memory_element, ChessDataTest *data) {
+void memoryElementToData(MemoryElement *memory_element, torch::Tensor *data) {
 	// convert state (string) to input (boolboards 19x8x8)
 	Environment env = Environment(memory_element->state);
-	data->input = env.boardToInput();
+	
 
-	// prob dictionary to floatboards
-	data->policy = env.movesToOutputProbs(memory_element->probs);
-	// winner to float value
-	data->value = memory_element->winner;
 }
 
 void Game::memoryToFile(){
 	// convert MemoryElement to ChessData element
-	std::vector<ChessDataTest> data;
+	torch::Tensor data;
 	for (int i = 0; i < (int)this->memory.size(); i++){
-		ChessDataTest chess_data;
+		torch::Tensor chess_data;
 		memoryElementToData(&this->memory[i], &chess_data);
-		data.push_back(chess_data);
+		// add chess_data to end of tensor
+		// TODO
 	}
 
 	ChessDataSet::write(this->game_id, data);

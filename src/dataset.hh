@@ -13,9 +13,9 @@ class ChessDataSet : public torch::data::datasets::Dataset<ChessDataSet> {
 	
 	void createDataset(std::string path);
 
-	void read(std::string filename, std::vector<ChessDataTest>* data);
+	void read(std::string filename, torch::Tensor data);
 
-	static void write(std::string filename, std::vector<ChessDataTest> data);
+	static void write(std::string filename, torch::Tensor data);
 
 	torch::data::Example<> get(size_t index) override;
 

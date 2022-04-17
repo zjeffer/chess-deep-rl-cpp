@@ -1,6 +1,8 @@
 #include "environment.hh"
-
+#include <string>
 #include <iostream>
+#include "utils.hh"
+
 
 Environment::Environment(thc::ChessRules rules) {
 	this->rules = rules;
@@ -39,7 +41,7 @@ void Environment::printBoard() {
     std::cout << std::endl;
 	char* board = this->rules.squares;
 	for (int i = 0; i < 64; i++) {
-		std::cout << board[i] << " ";
+		std::cout << board[i] << ".";
 		if (i % 8 == 7) {
 			std::cout << std::endl;
 		}
@@ -56,7 +58,7 @@ std::string Environment::getFen() {
 }
 
 std::string Environment::makeMove(thc::Move move) {
-	this->rules.PushMove(move);
+	this->rules.PlayMove(move);
     return this->getFen();
 }
 
@@ -69,81 +71,41 @@ void Environment::getLegalMoves(std::vector<thc::Move> &moves) {
     this->rules.GenLegalMoveList(moves);
 }
 
+torch::Tensor Environment::boardToInput() {
+    torch::Tensor input = torch::zeros({119, 8, 8});
 
-std::array<boolBoard, 19> Environment::boardToInput() {
-    std::array<boolBoard, 19> input{};
+    std::cout << "History size: " << (int)this->rules.history_idx << std::endl;
 
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
-            // player's turn
-            input[0].board[i][j] = this->rules.WhiteToPlay();
-            // castling rights
-            input[1].board[i][j] = this->rules.wqueen_allowed();
-            input[2].board[i][j] = this->rules.wking_allowed();
-            input[3].board[i][j] = this->rules.bqueen_allowed();
-            input[4].board[i][j] = this->rules.bking_allowed();
-            // repitition counter
-            input[5].board[i][j] = this->rules.GetRepetitionCount() > 3;
-        }
+    thc::ChessRules currentBoard;
+    std::memcpy(&currentBoard, &this->rules, sizeof(thc::ChessRules));
+
+    addboardToPlanes(&input, 0, &currentBoard);
+    for (int i = 1; i < (int)this->rules.history_idx; i++) {
+        int board_index = currentBoard.history_idx - i;
+        addboardToPlanes(&input, i, &currentBoard);
+        currentBoard.PopMove(currentBoard.history[board_index]);
     }
 
-    // get pieces for white
-    std::string fen = getFen();
-    int i = 0;
-    int row = 0;
-    int col = 0;
-    while (fen[i] != ' ') {
-        if (fen[i] == '/') {
-            row++;
-            col = 0;
-            i++;
-            continue;
-        }
+    std::cout << currentBoard.ToDebugStr() << std::endl;
 
-        if (fen[i] == 'P' || fen[i] == 'p') {
-            if (fen[i] == 'P') {
-                input[6].board[row][col] = true;
-            } else {
-                input[12].board[row][col] = true;
-            }
-        } else if (fen[i] == 'N' || fen[i] == 'n') {
-            if (fen[i] == 'N') {
-                input[7].board[row][col] = true;
-            } else {
-                input[13].board[row][col] = true;
-            }
-        } else if (fen[i] == 'B' || fen[i] == 'b') {
-            if (fen[i] == 'B') {
-                input[8].board[row][col] = true;
-            } else {
-                input[14].board[row][col] = true;
-            }
-        } else if (fen[i] == 'R' || fen[i] == 'r') {
-            if (fen[i] == 'R') {
-                input[9].board[row][col] = true;
-            } else {
-                input[15].board[row][col] = true;
-            }
-        } else if (fen[i] == 'Q' || fen[i] == 'q') {
-            if (fen[i] == 'Q') {
-                input[10].board[row][col] = true;
-            } else {
-                input[16].board[row][col] = true;
-            }
-        } else if (fen[i] == 'K' || fen[i] == 'k') {
-            if (fen[i] == 'K') {
-                input[11].board[row][col] = true;
-            } else {
-                input[17].board[row][col] = true;
-            }
-        } else {
-            // number
-            input[18].board[row][col] = false;
-        }
-        i++;
-        col++;
+    // current turn
+    if (this->rules.WhiteToPlay()) {
+        input[14*8] = torch::ones({8, 8});
+    } else {
+        input[14*8] = torch::zeros({8, 8});
     }
 
+    // total move count
+    input[14*8 + 1] = torch::full({8, 8}, this->rules.full_move_count);
+
+    // castling
+    input[14*8 + 2] = torch::full({8, 8}, this->rules.wqueen == 1);
+    input[14*8 + 3] = torch::full({8, 8}, this->rules.wking == 1);
+    input[14*8 + 4] = torch::full({8, 8}, this->rules.bqueen == 1);
+    input[14*8 + 5] = torch::full({8, 8}, this->rules.bking == 1);
+
+    input[14*8 + 6] = torch::full({8, 8}, this->rules.half_move_clock);
+    
     return input;
 }
 
