@@ -1041,6 +1041,7 @@ std::string ChessPosition::ToDebugStr(const char *label) {
             if (c == ' ')
                 c = '.';
             s += c;
+            s += ' ';
         }
         s += '\n';
     }
