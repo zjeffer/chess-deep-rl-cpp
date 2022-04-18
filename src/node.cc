@@ -93,7 +93,6 @@ float Node::getPUCTScore(){
 }
 
 float Node::getQ(){
-	/* TODO: add upper confidence bound */
 	return this->value / (this->visit_count + 1);
 }
 
@@ -103,7 +102,7 @@ float Node::getUCB(){
 		return 0.0;
 	}
 	float exploration_rate = log((1 + this->parent->visit_count + 20000) / 20000) + 2;
-	return exploration_rate * this->prior * (sqrt(this->parent->visit_count) / (1 + this->visit_count));
+	return exploration_rate * this->prior * (sqrt(this->parent->visit_count) / (this->visit_count + 1));
 }
 
 bool Node::getPlayer(){

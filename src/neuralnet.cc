@@ -204,5 +204,6 @@ void NeuralNetwork::train(DataLoader &loader, torch::optim::Optimizer &optimizer
         // TODO (https://github.com/pytorch/examples/blob/master/cpp/custom-dataset/custom-dataset.cpp)
     }
 
+    // TODO: add date & time
     torch::save(this, "./models/model.pt");
 }
