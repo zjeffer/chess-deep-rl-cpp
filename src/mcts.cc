@@ -1,13 +1,11 @@
-#include "mcts.hh"
-#include "environment.hh"
-#include "neuralnet.hh"
-#include "tqdm.h"
 #include <stdio.h>
-
-#include "chess/thc.hh"
 #include <chrono>
 #include <iostream>
 
+#include "chess/thc.hh"
+#include "mcts.hh"
+#include "tqdm.h"
+#include "utils.hh"
 
 
 MCTS::MCTS(Node* root, NeuralNetwork* nn) {
@@ -76,8 +74,8 @@ Node* MCTS::select(Node* root){
 
 float MCTS::expand(Node* node){
 	// convert board to input state
-	Environment board = Environment(node->getFen());
-	torch::Tensor inputState = board.boardToInput();
+	Environment env = Environment(node->getFen());
+	torch::Tensor inputState = env.boardToInput();
 	
 	// outputs
 	std::array<floatBoard, 73> output_probs;
@@ -88,15 +86,15 @@ float MCTS::expand(Node* node){
 
 	// output to moves
 	std::vector<thc::Move> legal_moves;
-	board.getLegalMoves(legal_moves);
+	env.getLegalMoves(legal_moves);
 	
-	std::map<thc::Move, float> moveProbs = board.outputProbsToMoves(output_probs, legal_moves);
+	std::map<thc::Move, float> moveProbs = utils::outputProbsToMoves(output_probs, legal_moves);
 
 	// add nodes for every move
 	for (int i = 0; i < (int)legal_moves.size(); i++) {
 		thc::Move move = legal_moves[i];
 		// make the move on the board
-		std::string new_fen = board.makeMove(move);
+		std::string new_fen = env.makeMove(move);
 
 		// get the move probability for this move
 		float prior = moveProbs[move];
@@ -107,7 +105,7 @@ float MCTS::expand(Node* node){
 		node->add_child(child);
 
 		// undo move
-		board.undoMove(move);
+		env.undoMove(move);
 	}
 	return output_value;
 }

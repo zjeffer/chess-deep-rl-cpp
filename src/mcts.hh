@@ -1,8 +1,10 @@
-#ifndef mcts_hh
-#define mcts_hh
+#ifndef MCTS_HH
+#define MCTS_HH
 
 #include "neuralnet.hh"
 #include "node.hh"
+#include "environment.hh"
+#include "neuralnet.hh"
 
 class MCTS {
   public:
@@ -28,4 +30,4 @@ class MCTS {
     NeuralNetwork *nn;
 };
 
-#endif /* mcts_hh */
+#endif /* MCTS_HH */
