@@ -72,7 +72,7 @@ void Environment::getLegalMoves(std::vector<thc::Move> &moves) {
 }
 
 torch::Tensor Environment::boardToInput() {
-    torch::Tensor input = torch::zeros({119, 8, 8});
+    torch::Tensor input = torch::zeros({119, 8, 8}, torch::kUInt8);
 
     std::cout << "History size: " << (int)this->rules.history_idx << std::endl;
 
@@ -80,7 +80,7 @@ torch::Tensor Environment::boardToInput() {
     std::memcpy(&currentBoard, &this->rules, sizeof(thc::ChessRules));
 
     addboardToPlanes(&input, 0, &currentBoard);
-    for (int i = 1; i < (int)this->rules.history_idx; i++) {
+    for (int i = 1; i <= (int)this->rules.history_idx; i++) {
         int board_index = currentBoard.history_idx - i;
         addboardToPlanes(&input, i, &currentBoard);
         currentBoard.PopMove(currentBoard.history[board_index]);

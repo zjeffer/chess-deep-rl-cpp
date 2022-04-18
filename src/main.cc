@@ -53,25 +53,23 @@ void test_NN(){
 	nn.predict(input, output_probs, output_value);
 }
 
-cv::Mat tensorToMat(const torch::Tensor &tensor){
-	// reshape 119x8x8 tensor to 952*8 image
-	torch::Tensor reshaped = torch::zeros({119*8, 8});
-	for (int plane = 0; plane < 119; plane++) {
-		for(int j = 0; j < 8; j++){
-			for(int k = 0; k < 8; k++){
-				reshaped[plane*8 + j][k] = 1;
-			}
-		}
-	}
-
-	// std::cout << reshaped << std::endl;
+cv::Mat tensorToMat(const torch::Tensor &tensor){	
+	// reshape tensor from 119x8x8 to 952x8
+	torch::Tensor reshaped = torch::stack(torch::unbind(tensor, 0), 1);
 
     cv::Mat mat(
 		cv::Size{119*8, 8},
 		CV_8UC1,
-		reshaped.data_ptr<float>()
+		reshaped.data_ptr<uchar>()
 	);
 	return mat.clone();
+}
+
+void saveCvMatToImg(const cv::Mat &mat, const std::string &filename){
+	// multiply every pixel by 255
+	cv::Mat mat_scaled;
+	mat.convertTo(mat_scaled, CV_8UC1, 128);
+	cv::imwrite(filename, mat_scaled);
 }
 
 void test_input(){
@@ -99,13 +97,11 @@ void test_input(){
 	// test board to input
 	std::cout << "Converting board to input state" << std::endl;
 	torch::Tensor input = board.boardToInput();
-	// std::cout << input << std::endl;
 
 	// tensor to image
 	std::cout << "Converting input to image" << std::endl;
 	cv::Mat mat = tensorToMat(input);
-	// std::cout << mat << std::endl;
-	cv::imwrite("output_test.png", mat);
+	saveCvMatToImg(mat, "output_test.png");
 }
 
 void test_Train(){
