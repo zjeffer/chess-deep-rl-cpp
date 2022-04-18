@@ -1,7 +1,9 @@
+#include <random>
+
 #include "game.hh"
 #include "node.hh"
 #include "dataset.hh"
-#include <random>
+#include "utils.hh"
 
 Game::Game(int simulations, Environment env, Agent white, Agent black) {
 	this->simulations = simulations;
@@ -60,7 +62,7 @@ int Game::playGame() {
 
 void Game::play_move(){
 	Agent* currentPlayer = this->env.getCurrentPlayer() ? &this->white : &this->black;
-	std::cout << "Current player: " << currentPlayer->name << std::endl;
+	std::cout << "Current player: " << currentPlayer->getName() << std::endl;
 
 	// update mcts tree with new root
 	// TODO: use child of old tree
@@ -89,7 +91,7 @@ void Game::play_move(){
 		std::cout << " " << childNodes[i]->getVisitCount() << " visits" << std::endl;
 	}
 	
-	// create distribution of moves
+	// TODO: create distribution of moves
 	/* 
 	float total_probability = 0;
 	for (int i = 0; i < (int)element.probs.size(); i++){
@@ -137,24 +139,36 @@ void Game::updateMemory(int winner){
 	}
 }
 
-void memoryElementToData(MemoryElement *memory_element, torch::Tensor *data) {
-	// convert state (string) to input (boolboards 19x8x8)
+void saveElementToDisk(MemoryElement *memory_element) {
+	// convert state (string) to input (boolboards 119x8x8)
 	Environment env = Environment(memory_element->state);
+	torch::Tensor input = env.boardToInput();
 	
+	// convert the probs to the policy output
+	torch::Tensor policy_output = torch::zeros({73, 8, 8});
+	for (MoveProb moveProb : memory_element->probs){
+		thc::Move move = moveProb.move;
+		std::tuple<int, int, int> plane_tuple = utils::moveToPlaneIndex(move);
+		int plane = std::get<0>(plane_tuple);
+		int row = std::get<1>(plane_tuple);
+		int col = std::get<2>(plane_tuple);
+		policy_output[plane][row][col] = moveProb.prob;
+	}
+
+	// convert memoryElement->winner int to tensor
+	torch::Tensor value = torch::zeros({1, 1});
+	value[0][0] = memory_element->winner;
+
+	// TODO: save tensors
+	
+
 
 }
 
 void Game::memoryToFile(){
-	// convert MemoryElement to ChessData element
-	torch::Tensor data;
 	for (int i = 0; i < (int)this->memory.size(); i++){
-		torch::Tensor chess_data;
-		memoryElementToData(&this->memory[i], &chess_data);
-		// add chess_data to end of tensor
-		// TODO
+		saveElementToDisk(&this->memory[i]);
 	}
-
-	ChessDataSet::write(this->game_id, data);
 
 	// reset memory
 	this->memory.clear();
