@@ -5,6 +5,7 @@
 #include "mcts.hh"
 #include "game.hh"
 #include "neuralnet.hh"
+#include "utils.hh"
 
 
 void test_MCTS(){
@@ -53,37 +54,20 @@ void test_NN(){
 	nn.predict(input, output_probs, output_value);
 }
 
-cv::Mat tensorToMat(const torch::Tensor &tensor){	
-	// reshape tensor from 119x8x8 to 952x8
-	torch::Tensor reshaped = torch::stack(torch::unbind(tensor, 0), 1);
-
-    cv::Mat mat(
-		cv::Size{119*8, 8},
-		CV_8UC1,
-		reshaped.data_ptr<uchar>()
-	);
-	return mat.clone();
-}
-
-void saveCvMatToImg(const cv::Mat &mat, const std::string &filename){
-	// multiply every pixel by 255
-	cv::Mat mat_scaled;
-	mat.convertTo(mat_scaled, CV_8UC1, 128);
-	cv::imwrite(filename, mat_scaled);
-}
-
 void test_input(){
 	Environment board = Environment();
-	// make some moves
+	// create some moves
 	std::vector<std::string> moveList = {
 		"e2e4", 
 		"e7e5",
 		"g1f3",
 		"b8c6",
 		"f1c4",
-		"f8c5"
+		"f8c5",
+		"e1g1"
 	};
 
+	// play the moves
 	for (std::string moveString : moveList){
 		thc::Move move;
 		if (move.TerseIn(board.getRules(), moveString.c_str())){
@@ -100,8 +84,8 @@ void test_input(){
 
 	// tensor to image
 	std::cout << "Converting input to image" << std::endl;
-	cv::Mat mat = tensorToMat(input);
-	saveCvMatToImg(mat, "output_test.png");
+	cv::Mat mat = utils::tensorToMat(input);
+	utils::saveCvMatToImg(mat, "tests/output_test.png");
 }
 
 void test_Train(){
@@ -131,7 +115,7 @@ void test_Train(){
 }
 
 int playGame(int argc, char** argv){
-	int amount_of_sims = 400;
+	int amount_of_sims = 10;
 	if (argc == 2) {
 		try {
 			amount_of_sims = std::stoi(argv[1]);
@@ -162,10 +146,12 @@ int main(int argc, char** argv) {
 	// try training
 	// test_Train();
 
-	// play chess
-	// int winner = playGame(argc, argv);
+	// test board to input state
+	// test_input();
 
-	test_input();
+	// play chess
+	int winner = playGame(argc, argv);
+
 
 	return 0;
 }
