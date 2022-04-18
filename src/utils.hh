@@ -70,11 +70,11 @@ void addboardToPlanes(torch::Tensor* planes, int start_index, thc::ChessRules* b
         }
     }
 
-    int repititions = board->GetRepetitionCount();
-    if (repititions >= 1) {
+    int repetitions = board->GetRepetitionCount();
+    if (repetitions > 1) {
         planes[0][start_index * 14 + 12] = torch::ones({8, 8});
     }
-    if (repititions >= 2) {
+    if (repetitions > 2) {
         planes[0][start_index * 14 + 13] = torch::ones({8, 8});
     }
 }
