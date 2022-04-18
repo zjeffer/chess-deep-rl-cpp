@@ -12,11 +12,14 @@ class Agent {
 
 		void updateMCTS(Node* newRoot);
 
-		std::string name;
+		std::string getName();
+
+		void setName(std::string name);
 
 	private:
 		NeuralNetwork* nn;
 		MCTS* mcts;
+		std::string name;
 };
 
 #endif // AGENT_HH
