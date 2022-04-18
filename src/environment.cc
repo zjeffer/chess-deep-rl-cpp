@@ -38,15 +38,7 @@ void Environment::reset() {
 }
 
 void Environment::printBoard() {
-    std::cout << std::endl;
-	char* board = this->rules.squares;
-	for (int i = 0; i < 64; i++) {
-		std::cout << board[i] << ".";
-		if (i % 8 == 7) {
-			std::cout << std::endl;
-		}
-	}
-    std::cout << std::endl;
+    std::cout << this->rules.ToDebugStr() << std::endl;
 }
 
 bool Environment::getCurrentPlayer() {
@@ -72,109 +64,39 @@ void Environment::getLegalMoves(std::vector<thc::Move> &moves) {
 }
 
 torch::Tensor Environment::boardToInput() {
-    torch::Tensor input = torch::zeros({119, 8, 8}, torch::kUInt8);
+    torch::Tensor input = torch::zeros({119, 8, 8});
 
-    std::cout << "History size: " << (int)this->rules.history_idx << std::endl;
-
+    // add all the pieces and the repitition counts (14 planes * 8 moves)
     thc::ChessRules currentBoard;
     std::memcpy(&currentBoard, &this->rules, sizeof(thc::ChessRules));
-
-    addboardToPlanes(&input, 0, &currentBoard);
-    for (int i = 1; i <= (int)this->rules.history_idx; i++) {
-        int board_index = currentBoard.history_idx - i;
-        addboardToPlanes(&input, i, &currentBoard);
-        currentBoard.PopMove(currentBoard.history[board_index]);
+    for (int i = 0; i < (int)this->rules.history_idx; i++) {
+        utils::addboardToPlanes(&input, i, &currentBoard);
+        currentBoard.PopMove(currentBoard.history[currentBoard.history_idx-i-1]);
     }
 
-    std::cout << currentBoard.ToDebugStr() << std::endl;
-
-    // current turn
+    // current turn (plane 113)
     if (this->rules.WhiteToPlay()) {
         input[14*8] = torch::ones({8, 8});
     } else {
         input[14*8] = torch::zeros({8, 8});
     }
 
-    // total move count
+    // total move counter (plane 114)
     input[14*8 + 1] = torch::full({8, 8}, this->rules.full_move_count);
 
-    // castling
+    // castling rights (planes 115-118)
     input[14*8 + 2] = torch::full({8, 8}, this->rules.wqueen == 1);
     input[14*8 + 3] = torch::full({8, 8}, this->rules.wking == 1);
     input[14*8 + 4] = torch::full({8, 8}, this->rules.bqueen == 1);
     input[14*8 + 5] = torch::full({8, 8}, this->rules.bking == 1);
 
+    // no-progress counter (plane 119)
     input[14*8 + 6] = torch::full({8, 8}, this->rules.half_move_clock);
     
+    // expand dims
+    input = input.unsqueeze(0); // TODO: fix tensorToMat function which probably broke here
     return input;
 }
 
-std::map<thc::Move, float> Environment::outputProbsToMoves(std::array<floatBoard, 73> &outputProbs, std::vector<thc::Move> legalMoves) {
-    std::map<thc::Move, float> moves = {};
-
-    for (int i = 0; i < (int)legalMoves.size(); i++) {
-        std::tuple<int, int, int> tpl = this->moveToPlaneIndex(legalMoves[i]);
-        moves[legalMoves[i]] = outputProbs[std::get<0>(tpl)].board[std::get<1>(tpl)][std::get<2>(tpl)];
-    }
-    return moves;
-}
 
 
-std::array<floatBoard, 73> Environment::movesToOutputProbs(std::vector<MoveProb> moves){
-    std::array<floatBoard, 73> output;
-    for (MoveProb move : moves){
-        std::tuple<int, int, int> tpl = this->moveToPlaneIndex(move.move);
-        output[std::get<0>(tpl)].board[std::get<1>(tpl)][std::get<2>(tpl)] = move.prob;
-    }
-    return output;
-}
-
-std::tuple<int, int, int> Environment::moveToPlaneIndex(thc::Move move){
-    char piece = this->getRules()->squares[move.src];
-    int plane_index = -1;
-    int direction = 0;
-
-    if (piece == ' ') {
-        printf("No piece on that square!\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (move.special >= thc::SPECIAL_PROMOTION_ROOK and
-        move.special <= thc::SPECIAL_PROMOTION_KNIGHT) {
-        // get directions
-        direction = Mapper::getUnderpromotionDirection(move.src, move.dst);
-
-        // get type of special move
-        int promotion_type;
-        if (move.special == thc::SPECIAL_PROMOTION_KNIGHT) {
-            promotion_type = UnderPromotion::KNIGHT;
-        } else if (move.special == thc::SPECIAL_PROMOTION_BISHOP) {
-            promotion_type = UnderPromotion::BISHOP;
-        } else if (move.special == thc::SPECIAL_PROMOTION_ROOK) {
-            promotion_type = UnderPromotion::ROOK;
-        } else {
-            printf("Unhandled promotion type: %d\n", move.special);
-        }
-
-        plane_index = mapper[promotion_type][1 - direction];
-    } else if (tolower(this->getRules()->squares[move.src]) == 'n') {
-        // get the correct knight move
-        direction = Mapper::getKnightDirection(move.src, move.dst);
-        plane_index = mapper[KnightMove::NORTH_LEFT + direction][0];
-    } else {
-        // get the correct direction
-        std::tuple<int, int> tuple =
-            Mapper::getQueenDirection(move.src, move.dst);
-        plane_index = mapper[std::get<0>(tuple)][std::get<1>(tuple)];
-    }
-
-    if (plane_index < 0 or plane_index > 72) {
-        printf("Plane index: %d\n", plane_index);
-        perror("Plane index out of bounds!");
-        exit(EXIT_FAILURE);
-    }
-
-    int row = move.src / 8;
-    int col = move.src % 8;
-    return std::make_tuple(plane_index, row, col);
-}

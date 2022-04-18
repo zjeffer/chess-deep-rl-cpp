@@ -4,7 +4,6 @@
 #include <array>
 #include <map>
 #include "chess/thc.hh"
-#include "mapper.hh"
 #include "types.hh"
 
 
@@ -37,15 +36,6 @@ class Environment {
 		 * @return std::array<boolBoard, 19> 
 		 */
 		torch::Tensor boardToInput();
-
-		/**
-		 * @brief For all legal moves, add the move and their probability to a dictionary
-		 * 
-		 * @param outputProbs 
-		 * @param legalMoves 
-		 * @return std::map<thc::Move, float> 
-		 */
-		std::map<thc::Move, float> outputProbsToMoves(std::array<floatBoard, 73> &outputProbs, std::vector<thc::Move> legalMoves);
 
 		/**
 		 * @brief Convert a list of moves to a policy output vector
