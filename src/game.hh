@@ -20,6 +20,8 @@ class Game {
 
     void updateMemory(int winner);
 
+	void memoryElementToTensors(MemoryElement *memory_element, torch::Tensor* input_tensor, torch::Tensor* output_tensor);
+
 	void memoryToFile();
 
 	void reset();

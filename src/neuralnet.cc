@@ -125,9 +125,7 @@ NeuralNetwork::NeuralNetwork() {
     std::cout << "Creating NeuralNetwork object..." << std::endl;
 
     if (torch::cuda::is_available()) {
-        std::cout << "CUDA loaded." << std::endl;
-        std::cout << "CUDA device count: " << torch::cuda::device_count() << std::endl;
-        std::cout << "CUDNN: " << torch::cuda::cudnn_is_available() << std::endl;
+        std::cout << "CUDA loaded. Device count: " << torch::cuda::device_count() << std::endl;
         device = torch::Device(torch::kCUDA);
     } else {
         std::cout << "CUDA not initialized. Using CPU." << std::endl;
@@ -137,35 +135,19 @@ NeuralNetwork::NeuralNetwork() {
     this->buildNetwork();
 
     // random input
+    std::cout << "Testing random input..." << std::endl;
     torch::Tensor input = torch::rand({1, 119, 8, 8});
     torch::Tensor output = this->forward(input);
-    std::cout << output.dim() << std::endl;
+    if (output.dim() != 2){
+        std::cerr << "Failed to test model with random input" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    std::cout << "Output successfull" << std::endl;
 }
 
-void NeuralNetwork::predict(torch::Tensor &input, std::array<floatBoard, 73> &output_probs, float &output_value) {
-    torch::Tensor output_tensor = this->forward(input);
-    // send tensor to cpu so we can access it
-    output_tensor = output_tensor.to(torch::Device(torch::kCPU));
-
-    // TODO: fix nans?
-    output_tensor = output_tensor.nan_to_num();
-
-    // tensor to array
-    float *output_probs_array = output_tensor.data_ptr<float>();
-
-    // reshape output_probs_array to output_probs (4672 floats to 73 floatboards)
-    for (int i = 0; i < 73; i++) {
-        for (int j = 0; j < 8; j++) {
-            for (int k = 0; k < 8; k++) {
-                output_probs[i].board[j][k] = output_probs_array[i * 8 * 8 + j * 8 + k];
-            }
-        }
-    }
-
-    output_value = output_probs_array[4672];
-
-    // std::cout << "output_probs example: " << output_probs[0].board[0][0] << std::endl;
-    // std::cout << "output_value example: " << output_value << std::endl;
+void NeuralNetwork::predict(torch::Tensor &input, torch::Tensor &output) {
+    std::cout << "Predicting..." << std::endl;
+    output = this->forward(input);
 }
 
 template <typename DataLoader>

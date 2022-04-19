@@ -139,10 +139,11 @@ void Game::updateMemory(int winner){
 	}
 }
 
-void saveElementToDisk(MemoryElement *memory_element) {
+void Game::memoryElementToTensors(MemoryElement *memory_element, torch::Tensor* input_tensor, torch::Tensor* output_tensor) {
 	// convert state (string) to input (boolboards 119x8x8)
 	Environment env = Environment(memory_element->state);
-	torch::Tensor input = env.boardToInput();
+	torch::Tensor t = env.boardToInput();
+	input_tensor = &t;
 	
 	// convert the probs to the policy output
 	torch::Tensor policy_output = torch::zeros({73, 8, 8});
@@ -155,20 +156,37 @@ void saveElementToDisk(MemoryElement *memory_element) {
 		policy_output[plane][row][col] = moveProb.prob;
 	}
 
-	// convert memoryElement->winner int to tensor
-	torch::Tensor value = torch::zeros({1, 1});
-	value[0][0] = memory_element->winner;
-
-	// TODO: save tensors
-	
-
-
+	// add value to end of policy output
+	torch::Tensor value_output = torch::zeros({1});
+	value_output[0] = memory_element->winner;
+	torch::Tensor o = torch::cat({policy_output.view({73*8*8}), value_output}, 0);
+	output_tensor = &o;
 }
 
 void Game::memoryToFile(){
+	std::cout << "Converting memory elements to tensors" << std::endl;
+	torch::Tensor inputs = torch::zeros({(int)this->memory.size(), 119, 8, 8});
+	torch::Tensor outputs = torch::zeros({(int)this->memory.size(), 73*8*8 + 1});
 	for (int i = 0; i < (int)this->memory.size(); i++){
-		saveElementToDisk(&this->memory[i]);
+		torch::Tensor input_tensor = torch::zeros({119, 8, 8});
+		torch::Tensor output_tensor = torch::zeros({73*8*8 + 1});
+		memoryElementToTensors(&this->memory[i], &input_tensor, &output_tensor);
+		inputs[i] = input_tensor;
+		outputs[i] = output_tensor;
 	}
+
+	// create a directory for the current game
+	std::cout << "Creating directory for game id = " << this->game_id << std::endl;
+	std::string directory = "memory/" + this->game_id;
+	if (!utils::createDirectory(directory)){
+		std::cerr << "Could not create directory for current game" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
+	// save tensors to file
+	std::cout << "Saving tensors to file" << std::endl;
+	torch::save(inputs, directory + "/input.pt");
+	torch::save(outputs, directory + "/outputs.pt");
 
 	// reset memory
 	this->memory.clear();

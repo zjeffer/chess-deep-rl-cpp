@@ -8,25 +8,18 @@ ChessDataSet::ChessDataSet(std::string path) {
 }
 
 void ChessDataSet::createDataset(std::string path){
-	/* std::vector<ChessDataTest> data_temp;
-	for (auto& p : std::filesystem::directory_iterator(path)) {
-		std::string filename = p.path().string();
-		std::cout << "Checking file " << filename << " ... ";
-		if (filename.find("game-") != std::string::npos) {
-			this->read(filename, &data_temp);
-			std::cout << "Added data from" << std::endl;
-			std::cout << "Size so far: " << data_temp.size() << std::endl;
-		} else {
-			std::cout << "Skipping..." << std::endl;
+	// for every folder in path/
+	for (const auto& game : std::filesystem::directory_iterator(path)) {
+		// if folder is a folder and starts with game-
+		if (std::filesystem::is_directory(game.path()) && game.path().string().find("game-") == 0) {
+			torch::Tensor inputs;
+			torch::load(inputs, game.path().string() + "/input.pt");
+			torch::Tensor outputs;
+			torch::load(outputs, game.path().string() + "/outputs.pt");
+			// save tensors to data
+			
 		}
 	}
-	for(int i = 0; i < (int)data_temp.size(); i++){
-		ChessData cd;
-		cd.input = data_temp[i].input;
-		cd.policy = data_temp[i].policy;
-		cd.value = data_temp[i].value;
-		this->data.push_back(cd);
-	} */
 	std::cout << "Created dataset" << std::endl;
 }
 

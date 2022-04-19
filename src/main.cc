@@ -30,28 +30,24 @@ void test_MCTS(){
 
 void test_NN(){
 	NeuralNetwork nn = NeuralNetwork();
-	std::array<floatBoard, 73> output_probs = {};
-	float output_value = 0.0;
-	// fill input
+
 	Environment board = Environment();
-
 	torch::Tensor input = board.boardToInput();
-
-	// print board
-	for (int i = 0; i < 119; i++) {
-		for (int j = 0; j < 8; j++){
-			for(int k = 0; k < 8; k++){
-				std::cout << input[i][j][k];
-			}
-			std::cout << std::endl;
-		}
-		std::cout << std::endl;
-	}
+	torch::Tensor output = torch::zeros({4673});
 
 	// predict
-	nn.predict(input, output_probs, output_value);
-	nn.predict(input, output_probs, output_value);
-	nn.predict(input, output_probs, output_value);
+	nn.predict(input, output);
+
+	std::cout << "predicted" << std::endl;
+
+	// value is the last element of the output tensor
+	torch::Tensor value = output.slice(0, 4672, 4673);
+	std::cout << "value: " << value << std::endl;
+	torch::Tensor policy = output.slice(0, 0, 4672).view({73, 8, 8});
+	std::cout << "policy: " << policy.sizes() << std::endl;
+	// reshape to 73x8x8
+	cv::Mat img = utils::tensorToMat(policy, 73*8, 8);
+	utils::saveCvMatToImg(img, "tests/output.png");
 }
 
 void test_input(){
@@ -84,8 +80,8 @@ void test_input(){
 
 	// tensor to image
 	std::cout << "Converting input to image" << std::endl;
-	cv::Mat mat = utils::tensorToMat(input);
-	utils::saveCvMatToImg(mat, "tests/output_test.png");
+	cv::Mat mat = utils::tensorToMat(input, 119*8, 8);
+	utils::saveCvMatToImg(mat, "tests/input.png");
 }
 
 void test_Train(){
@@ -115,7 +111,7 @@ void test_Train(){
 }
 
 int playGame(int argc, char** argv){
-	int amount_of_sims = 10;
+	int amount_of_sims = 20;
 	if (argc == 2) {
 		try {
 			amount_of_sims = std::stoi(argv[1]);
@@ -141,7 +137,7 @@ int main(int argc, char** argv) {
 	// test_MCTS();
 
 	// test neural network:
-	// test_NN();
+	test_NN();
 
 	// try training
 	// test_Train();
@@ -150,7 +146,7 @@ int main(int argc, char** argv) {
 	// test_input();
 
 	// play chess
-	int winner = playGame(argc, argv);
+	// int winner = playGame(argc, argv);
 
 
 	return 0;

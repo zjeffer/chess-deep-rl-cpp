@@ -74,18 +74,20 @@ void utils::addboardToPlanes(torch::Tensor *planes, int start_index, thc::ChessR
     }
 }
 
-cv::Mat utils::tensorToMat(const torch::Tensor &tensor) {
-    // reshape tensor from 119x8x8 to 952x8
+cv::Mat utils::tensorToMat(const torch::Tensor &tensor, int rows, int cols) {
+    std::cout << "tensorToMat" << std::endl;
+    // reshape tensor
     torch::Tensor reshaped = torch::stack(torch::unbind(tensor, 0), 1);
 
     cv::Mat mat(
-        cv::Size{119 * 8, 8},
+        cv::Size{rows, cols},
         CV_32FC1,
         reshaped.data_ptr<float>());
     return mat.clone();
 }
 
 void utils::saveCvMatToImg(const cv::Mat &mat, const std::string &filename) {
+    std::cout << "saveCvMatToImg" << std::endl;
     // multiply every pixel by 128
     // (not 255, so the difference between bools and real values is clearer)
     cv::Mat mat_scaled;
@@ -169,4 +171,8 @@ std::array<floatBoard, 73> utils::movesToOutputProbs(std::vector<MoveProb> moves
         output[std::get<0>(tpl)].board[std::get<1>(tpl)][std::get<2>(tpl)] = move.prob;
     }
     return output;
+}
+
+bool utils::createDirectory(std::string path){
+    return std::filesystem::create_directories(path);
 }

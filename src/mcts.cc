@@ -81,8 +81,10 @@ float MCTS::expand(Node* node){
 	std::array<floatBoard, 73> output_probs;
 	float output_value = 0.0;
 
+	torch::Tensor output;
+
 	// send input to neural network
-	this->nn->predict(inputState, output_probs, output_value);
+	this->nn->predict(inputState, output);
 
 	// output to moves
 	std::vector<thc::Move> legal_moves;
