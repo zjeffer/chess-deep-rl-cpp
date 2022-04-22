@@ -24,7 +24,7 @@
 
 class NeuralNetwork : public torch::nn::Module {
   public:
-    NeuralNetwork();
+    NeuralNetwork(bool useCPU=false);
 
     void buildNetwork();
 

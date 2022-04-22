@@ -18,7 +18,7 @@ void addboardToPlanes(torch::Tensor *planes, int start_index, thc::ChessRules *b
 
 cv::Mat tensorToMat(const torch::Tensor &tensor, int rows, int cols);
 
-void saveCvMatToImg(const cv::Mat &mat, const std::string &filename);
+void saveCvMatToImg(const cv::Mat mat, const std::string &filename);
 
 bool isKnightMove(thc::Move move);
 

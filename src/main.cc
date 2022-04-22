@@ -29,30 +29,9 @@ void test_MCTS(){
 }
 
 void test_NN(){
-	NeuralNetwork nn = NeuralNetwork();
+	NeuralNetwork nn = NeuralNetwork(true);
 
 	Environment board = Environment();
-	torch::Tensor input = board.boardToInput();
-	torch::Tensor output = torch::zeros({4673});
-
-	// predict
-	nn.predict(input, output);
-
-	std::cout << "predicted" << std::endl;
-
-	// value is the last element of the output tensor
-	torch::Tensor value = output.slice(0, 4672, 4673);
-	std::cout << "value: " << value << std::endl;
-	torch::Tensor policy = output.slice(0, 0, 4672).view({73, 8, 8});
-	std::cout << "policy: " << policy.sizes() << std::endl;
-	// reshape to 73x8x8
-	cv::Mat img = utils::tensorToMat(policy, 73*8, 8);
-	utils::saveCvMatToImg(img, "tests/output.png");
-}
-
-void test_input(){
-	Environment board = Environment();
-	// create some moves
 	std::vector<std::string> moveList = {
 		"e2e4", 
 		"e7e5",
@@ -82,6 +61,22 @@ void test_input(){
 	std::cout << "Converting input to image" << std::endl;
 	cv::Mat mat = utils::tensorToMat(input, 119*8, 8);
 	utils::saveCvMatToImg(mat, "tests/input.png");
+
+	torch::Tensor output = torch::zeros({4673});
+
+	// predict
+	nn.predict(input, output);
+
+	std::cout << "predicted" << std::endl;
+
+	// value is the last element of the output tensor
+	torch::Tensor value = output.slice(1, 4672, 4673);
+	std::cout << "value: " << value << std::endl;
+	torch::Tensor policy = output.slice(1, 0, 4672).view({73, 8, 8});
+	std::cout << "policy: " << policy.sizes() << std::endl;
+	// reshape to 73x8x8
+	cv::Mat img = utils::tensorToMat(policy, 73*8, 8);
+	utils::saveCvMatToImg(img, "tests/output.png");
 }
 
 void test_Train(){
@@ -136,14 +131,11 @@ int main(int argc, char** argv) {
 	// test mcts simulations:
 	// test_MCTS();
 
-	// test neural network:
+	// test neural network input & outputs:
 	test_NN();
 
 	// try training
 	// test_Train();
-
-	// test board to input state
-	// test_input();
 
 	// play chess
 	// int winner = playGame(argc, argv);

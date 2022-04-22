@@ -64,7 +64,6 @@ void NeuralNetwork::buildNetwork() {
     lin3 = register_module("value_output", lin3);
 
     // all layers to device
-    torch::Device device = torch::Device(torch::kCUDA);
     input_conv->to(device);
     residual_conv->to(device);
     policy_conv->to(device);
@@ -121,15 +120,20 @@ torch::Tensor NeuralNetwork::forward(torch::Tensor x) {
     return torch::cat({this->policy_head->forward(x), this->value_head->forward(x)}, 1);
 }
 
-NeuralNetwork::NeuralNetwork() {
+NeuralNetwork::NeuralNetwork(bool useCPU) {
     std::cout << "Creating NeuralNetwork object..." << std::endl;
 
-    if (torch::cuda::is_available()) {
-        std::cout << "CUDA loaded. Device count: " << torch::cuda::device_count() << std::endl;
-        device = torch::Device(torch::kCUDA);
+    if (useCPU) {
+        std::cout << "Running on CPU." << std::endl;
+        this->device = torch::Device(torch::kCPU);
     } else {
-        std::cout << "CUDA not initialized. Using CPU." << std::endl;
-        device = torch::Device(torch::kCPU);
+        if (torch::cuda::is_available() ) {
+            std::cout << "CUDA loaded. Device count: " << torch::cuda::device_count() << std::endl;
+            this->device = torch::Device(torch::kCUDA);
+        } else {
+            std::cout << "CUDA not available. Running on CPU." << std::endl;
+            this->device = torch::Device(torch::kCPU);
+        }
     }
 
     this->buildNetwork();
@@ -142,7 +146,7 @@ NeuralNetwork::NeuralNetwork() {
         std::cerr << "Failed to test model with random input" << std::endl;
         exit(EXIT_FAILURE);
     }
-    std::cout << "Output successfull" << std::endl;
+    std::cout << "Output successful" << std::endl;
 }
 
 void NeuralNetwork::predict(torch::Tensor &input, torch::Tensor &output) {

@@ -75,24 +75,23 @@ void utils::addboardToPlanes(torch::Tensor *planes, int start_index, thc::ChessR
 }
 
 cv::Mat utils::tensorToMat(const torch::Tensor &tensor, int rows, int cols) {
-    std::cout << "tensorToMat" << std::endl;
-    // reshape tensor
-    torch::Tensor reshaped = torch::stack(torch::unbind(tensor, 0), 1);
+    // reshape tensor from 3d tensor to 2d rectangle
+    torch::Tensor reshaped = torch::stack(torch::unbind(tensor, 2), 1);
 
     cv::Mat mat(
         cv::Size{rows, cols},
         CV_32FC1,
         reshaped.data_ptr<float>());
+    // without .clone() it will create some weird errors
     return mat.clone();
 }
 
-void utils::saveCvMatToImg(const cv::Mat &mat, const std::string &filename) {
-    std::cout << "saveCvMatToImg" << std::endl;
+void utils::saveCvMatToImg(const cv::Mat mat, const std::string &filename) {
     // multiply every pixel by 128
-    // (not 255, so the difference between bools and real values is clearer)
-    cv::Mat mat_scaled;
-    mat.convertTo(mat_scaled, CV_32FC1, 128);
-    cv::imwrite(filename, mat_scaled);
+    // not 255, so the difference between bools and real values (>1) is clearer
+    mat.convertTo(mat, CV_32FC1, 128);
+    cv::imwrite(filename, mat);
+    std::cout << "Saved image to: " << filename << std::endl;
 }
 
 
