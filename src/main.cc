@@ -92,13 +92,39 @@ void test_Train(){
 	std::cout << "Data loader created" << std::endl;
 
 	// optimizer
-	torch::optim::Adam optimizer(nn.parameters(), 0.01);
+	int learning_rate = 0.2;
+	torch::optim::Adam optimizer(nn.parameters(), learning_rate);
 
-	std::cout << "Starting training" << std::endl;
+	float Loss = 0, Acc = 0;
+
+	// TODO: fix "stack expects each tensor to be equal size, but got [0] at entry 0 and [119, 8, 8] at entry 2"
+	std::cout << "Starting training with " << train_set_size << " examples" << std::endl;
 	for (auto& batch: *data_loader){
 		std::cout << "Batch" << std::endl;
 		auto data = batch.data.to(torch::kCUDA);
 		auto target = batch.target.to(torch::kCUDA);
+		// divide policy and value targets
+		auto policy_target = target.slice(1, 0, 4672).view({73, 8, 8});
+		auto value_target = target.slice(1, 4672, 4673);
+
+		auto output = nn.forward(data);
+		auto policy_output = output.slice(1, 0, 4672).view({73, 8, 8});
+		auto value_output = output.slice(1, 4672, 4673);
+
+		// loss
+		// policy loss is categorical cross entropy
+		auto policy_loss = -torch::sum(policy_output * torch::log_softmax(policy_output, 1), 1);
+		auto value_loss = torch::mse_loss(value_output, value_target);
+		
+		auto loss = policy_loss + value_loss;
+		std::cout << "Loss: " << loss << std::endl;
+		loss.backward();
+		optimizer.step();
+
+
+		Loss += loss.item<float>();
+		Acc += torch::sum(torch::argmax(policy_output, 1) == torch::argmax(policy_target, 1)).item<float>();
+		std::cout << "Loss: " << Loss << " Acc: " << Acc << std::endl;
 	}
 	std::cout << "Training finished" << std::endl;
 	
@@ -132,10 +158,10 @@ int main(int argc, char** argv) {
 	// test_MCTS();
 
 	// test neural network input & outputs:
-	test_NN();
+	// test_NN();
 
 	// try training
-	// test_Train();
+	test_Train();
 
 	// play chess
 	// int winner = playGame(argc, argv);

@@ -184,9 +184,17 @@ void Game::memoryToFile(){
 	}
 
 	// save tensors to file
-	std::cout << "Saving tensors to file" << std::endl;
-	torch::save(inputs, directory + "/input.pt");
-	torch::save(outputs, directory + "/outputs.pt");
+	std::cout << "Saving tensors to files" << std::endl;
+	for (int i = 0; i < (int)this->memory.size(); i++){
+		// get the move number with zero padding
+		std::ostringstream ss;
+		ss << std::setw(3) << std::setfill('0') << i;
+		std::string move =  "/move-" + ss.str();
+		std::cout << "Saving tensor " << i << " to file " <<  directory + move << std::endl;
+		// save pair to file
+		torch::save(inputs[i].clone(), directory + move + "-input.pt");
+		torch::save(outputs[i].clone(), directory + move + "-output.pt");
+	}
 
 	// reset memory
 	this->memory.clear();

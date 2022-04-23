@@ -150,7 +150,6 @@ NeuralNetwork::NeuralNetwork(bool useCPU) {
 }
 
 void NeuralNetwork::predict(torch::Tensor &input, torch::Tensor &output) {
-    std::cout << "Predicting..." << std::endl;
     output = this->forward(input);
 }
 

@@ -44,26 +44,4 @@ struct floatBoard {
 	std::array<std::array<float, 8>, 8> board {};
 };
 
-/**
- * @brief Single data point for the chess dataset
- */
-struct ChessData : torch::data::Example<> {
-	// data: tensor of 3 tuples:
-	// input: 19x8x8
-	std::array<boolBoard, 19> input;
-	// first output: 73x8x8
-	std::array<floatBoard, 73> policy;
-	// second output: the value of the current position
-	float value;
-};
-
-struct ChessDataTest {
-	// input: 19x8x8
-	std::array<boolBoard, 19> input;
-	// first output: 73x8x8
-	std::array<floatBoard, 73> policy;
-	// second output: the value of the current position
-	float value;
-};
-
 #endif // TYPES_HH

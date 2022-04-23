@@ -6,6 +6,7 @@
 
 #include "types.hh"
 
+using ChessData = std::pair<torch::Tensor, torch::Tensor>;
 
 class ChessDataSet : public torch::data::datasets::Dataset<ChessDataSet> {
   public:
