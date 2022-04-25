@@ -33,7 +33,7 @@ class Environment {
 		/**
 		 * @brief Convert the current board to an input interpretable by the model
 		 * 
-		 * @return std::array<boolBoard, 19> 
+		 * @return torch::Tensor 
 		 */
 		torch::Tensor boardToInput();
 
@@ -41,9 +41,9 @@ class Environment {
 		 * @brief Convert a list of moves to a policy output vector
 		 * 
 		 * @param moves 
-		 * @return std::array<floatBoard, 73> 
+		 * @return torch::Tensor
 		 */
-		std::array<floatBoard, 73> movesToOutputProbs(std::vector<MoveProb> moves);
+		torch::Tensor movesToOutputProbs(std::vector<MoveProb> moves);
 
 		/**
 		 * @brief Convert a move to a plane index, the row, and column on the board

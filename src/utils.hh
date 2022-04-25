@@ -24,9 +24,9 @@ bool isKnightMove(thc::Move move);
 
 std::tuple<int, int, int> moveToPlaneIndex(thc::Move move);
 
-std::map<thc::Move, float> outputProbsToMoves(std::array<floatBoard, 73> &outputProbs, std::vector<thc::Move> legalMoves);
+std::map<thc::Move, float> outputProbsToMoves(torch::Tensor &outputProbs, std::vector<thc::Move> legalMoves);
 
-std::array<floatBoard, 73> movesToOutputProbs(std::vector<MoveProb> moves);
+torch::Tensor movesToOutputProbs(std::vector<MoveProb> moves);
 
 bool createDirectory(std::string path);
 

@@ -140,7 +140,7 @@ void Game::updateMemory(int winner){
 }
 
 void Game::memoryElementToTensors(MemoryElement *memory_element, torch::Tensor* input_tensor, torch::Tensor* output_tensor) {
-	// convert state (string) to input (boolboards 119x8x8)
+	// convert state (string) to input (boolean boards 119x8x8)
 	Environment env = Environment(memory_element->state);
 	torch::Tensor t = env.boardToInput();
 	input_tensor = &t;

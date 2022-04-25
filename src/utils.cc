@@ -152,22 +152,22 @@ std::tuple<int, int, int> utils::moveToPlaneIndex(thc::Move move){
     return std::make_tuple(plane_index, row, col);
 }
 
-std::map<thc::Move, float> utils::outputProbsToMoves(std::array<floatBoard, 73> &outputProbs, std::vector<thc::Move> legalMoves) {
+std::map<thc::Move, float> utils::outputProbsToMoves(torch::Tensor &outputProbs, std::vector<thc::Move> legalMoves) {
     std::map<thc::Move, float> moves = {};
 
     for (int i = 0; i < (int)legalMoves.size(); i++) {
         std::tuple<int, int, int> tpl = utils::moveToPlaneIndex(legalMoves[i]);
-        moves[legalMoves[i]] = outputProbs[std::get<0>(tpl)].board[std::get<1>(tpl)][std::get<2>(tpl)];
+        moves[legalMoves[i]] = outputProbs[std::get<0>(tpl)][std::get<1>(tpl)][std::get<2>(tpl)].item().toFloat();
     }
     return moves;
 }
 
 
-std::array<floatBoard, 73> utils::movesToOutputProbs(std::vector<MoveProb> moves){
-    std::array<floatBoard, 73> output;
+torch::Tensor utils::movesToOutputProbs(std::vector<MoveProb> moves){
+    torch::Tensor output;
     for (MoveProb move : moves){
         std::tuple<int, int, int> tpl = utils::moveToPlaneIndex(move.move);
-        output[std::get<0>(tpl)].board[std::get<1>(tpl)][std::get<2>(tpl)] = move.prob;
+        output[std::get<0>(tpl)][std::get<1>(tpl)][std::get<2>(tpl)] = move.prob;
     }
     return output;
 }

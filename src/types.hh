@@ -30,18 +30,5 @@ struct MemoryElement {
 	int winner;
 };
 
-/**
- * @brief 8x8 board of booleans
- */
-struct boolBoard {
-	std::array<std::array<bool, 8>, 8> board {};
-};
-
-/**
- * @brief 8x8 board of floats
- */
-struct floatBoard {
-	std::array<std::array<float, 8>, 8> board {};
-};
 
 #endif // TYPES_HH

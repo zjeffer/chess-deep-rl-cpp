@@ -78,7 +78,7 @@ float MCTS::expand(Node* node){
 	torch::Tensor inputState = env.boardToInput();
 	
 	// outputs
-	std::array<floatBoard, 73> output_probs;
+	torch::Tensor output_probs;
 	float output_value = 0.0;
 
 	torch::Tensor output;
