@@ -87,7 +87,10 @@
 		"filesystem": "cpp",
 		"*.inc": "cpp",
 		"locale": "cpp",
-		"*.txx": "cpp"
+		"*.txx": "cpp",
+		"__bit_reference": "cpp",
+		"__string": "cpp",
+		"ios": "cpp"
 	},
 	"C_Cpp.errorSquiggles": "Enabled"
 }
