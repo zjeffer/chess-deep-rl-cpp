@@ -3,3 +3,4 @@ neural-net/
 .cache/
 build
 memory/game-*
+models/*.pt
