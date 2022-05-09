@@ -74,24 +74,37 @@ void utils::addboardToPlanes(torch::Tensor *planes, int start_index, thc::ChessR
     }
 }
 
-cv::Mat utils::tensorToMat(const torch::Tensor &tensor, int rows, int cols) {
+cv::Mat utils::tensorToMat(torch::Tensor tensor, int rows, int cols) {
+    // if tensor is 3d, add a dimension at the start
+    if (tensor.dim() == 3) {
+        tensor = tensor.unsqueeze(0);
+    }
     // reshape tensor from 3d tensor to 2d rectangle
-    torch::Tensor reshaped = torch::stack(torch::unbind(tensor, 2), 1);
+    torch::Tensor reshaped = torch::stack(torch::unbind(tensor, 2), 1).flatten(0, 1);
+    std::cout << "Reshaped tensor from " << tensor.sizes() << " to " << reshaped.sizes() << std::endl;
 
+    // send to cpu, otherwise it segfaults
+    reshaped = reshaped.to(torch::kCPU);
     cv::Mat mat(
         cv::Size{rows, cols},
         CV_32FC1,
         reshaped.data_ptr<float>());
+    std::cout << "Printing mat: " << std::endl;
+    std::cout << mat << std::endl;
     // without .clone() it will create some weird errors
     return mat.clone();
 }
 
-void utils::saveCvMatToImg(const cv::Mat mat, const std::string &filename) {
-    // multiply every pixel by 128
-    // not 255, so the difference between bools and real values (>1) is clearer
-    mat.convertTo(mat, CV_32FC1, 128);
-    cv::imwrite(filename, mat);
-    std::cout << "Saved image to: " << filename << std::endl;
+void utils::saveCvMatToImg(const cv::Mat mat, const std::string &filename, int multiplier) {
+    // multiply every pixel by a multiplier
+    // this is because CV expects values from 0-255
+    std::cout << "Converting mat..." << std::endl;
+    mat.convertTo(mat, CV_32FC1, multiplier);
+    if (cv::imwrite(filename, mat)) {
+        std::cout << "Saved image to: " << filename << std::endl;
+    } else {
+        std::cerr << "Error: Could not save image to: " << filename << std::endl;
+    }
 }
 
 
@@ -164,7 +177,7 @@ std::map<thc::Move, float> utils::outputProbsToMoves(torch::Tensor &outputProbs,
 
 
 torch::Tensor utils::movesToOutputProbs(std::vector<MoveProb> moves){
-    torch::Tensor output;
+    torch::Tensor output = torch::zeros({1, 73, 8, 8});
     for (MoveProb move : moves){
         std::tuple<int, int, int> tpl = utils::moveToPlaneIndex(move.move);
         output[std::get<0>(tpl)][std::get<1>(tpl)][std::get<2>(tpl)] = move.prob;

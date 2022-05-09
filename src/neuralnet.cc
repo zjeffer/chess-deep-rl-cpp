@@ -120,7 +120,35 @@ torch::Tensor NeuralNetwork::forward(torch::Tensor x) {
     return torch::cat({this->policy_head->forward(x), this->value_head->forward(x)}, 1);
 }
 
-NeuralNetwork::NeuralNetwork(bool useCPU) {
+bool NeuralNetwork::loadModel(std::string path) {
+    try {
+        // load model from path
+        std::cout << "Loading model from: " << path << std::endl;
+        torch::serialize::InputArchive ia;
+        ia.load_from(path);
+        this->load(ia);
+    } catch (const std::exception& e) {
+        std::cerr << "Error loading model: " << e.what() << std::endl;
+        return false;
+    }
+    return true;
+}
+
+bool NeuralNetwork::saveModel(std::string path){
+    try {
+        // save model to path
+        std::cout << "Saving model to: " << path << std::endl;
+        torch::serialize::OutputArchive oa;
+        this->save(oa);
+        oa.save_to(path);
+    } catch (const std::exception& e) {
+        std::cerr << "Error saving model: " << e.what() << std::endl;
+        return false;
+    }
+    return true;
+}
+
+NeuralNetwork::NeuralNetwork(std::string path, bool useCPU) : torch::nn::Module() {
     std::cout << "Creating NeuralNetwork object..." << std::endl;
 
     if (useCPU) {
@@ -137,11 +165,16 @@ NeuralNetwork::NeuralNetwork(bool useCPU) {
     }
 
     this->buildNetwork();
+    // if the path is given, load the model
+    if (!path.empty()){
+        this->loadModel(path);
+    }
 
     // random input
     std::cout << "Testing random input..." << std::endl;
     torch::Tensor input = torch::rand({1, 119, 8, 8});
-    torch::Tensor output = this->forward(input);
+    torch::Tensor output;
+    this->predict(input, output);
     if (output.dim() != 2){
         std::cerr << "Failed to test model with random input" << std::endl;
         exit(EXIT_FAILURE);
@@ -153,42 +186,46 @@ void NeuralNetwork::predict(torch::Tensor &input, torch::Tensor &output) {
     output = this->forward(input);
 }
 
-template <typename DataLoader>
-void NeuralNetwork::train(DataLoader &loader, torch::optim::Optimizer &optimizer, int data_size) {
-    int index = 0;
-    float Loss = 0.0, Acc = 0.0;
+void NeuralNetwork::train(ChessDataLoader &loader, torch::optim::Optimizer &optimizer, int data_size, int batch_size) {
+    float Loss = 0, Acc = 0;
 
-    for (auto &batch : loader) {
-        auto data = batch.data.to(this->device);
-        // TODO: what does this function do? what is view?
-        auto targets = batch.target.to(this->device).view({-1});
+	std::cout << "Starting training with " << data_size << " examples" << std::endl;
+	int index = 0;
+	for (auto batch : loader) {
+		int size = batch.data.sizes()[0];
+		std::cout << "Batch of size " << size << std::endl;
+		auto data = batch.data.to(torch::kCUDA);
+		auto target = batch.target.to(torch::kCUDA);
+		// divide policy and value targets
+		auto policy_target = target.slice(1, 0, 4672).view({size, 73, 8, 8});
+		auto value_target = target.slice(1, 4672, 4673).view({size, 1});
 
-        auto output = this->forward(data);
-        // probs_output = the first 4672 floats
-        auto probs_output = output.slice(1, 0, 4672);
-        // value_output = the last float
-        auto value_output = output.slice(1, 4672, 4672 + 1);
-        auto probs_loss = torch::cross_entropy_loss(probs_output, targets);
-        auto value_loss = torch::mse_loss(value_output, targets);
+		auto output = this->forward(data);
+		auto policy_output = output.slice(1, 0, 4672).view({size, 73, 8, 8});
+		auto value_output = output.slice(1, 4672, 4673).view({size, 1});
 
-        auto loss = probs_loss + value_loss;
-        auto acc = output.argmax(1).eq(targets).sum();
+		// loss
+		// policy loss is cross entropy loss
+		auto policy_loss = -torch::sum(policy_target * torch::clamp(torch::log(policy_output), -10e1, 10e1));
+		auto value_loss = torch::mse_loss(value_output, value_target);
+		
+		std::cout << "Policy loss: " << policy_loss << std::endl;
+		std::cout << "Value loss: " << value_loss << std::endl;
+		auto loss = torch::add(policy_loss, value_loss);
 
-        optimizer.zero_grad();
-        loss.backward();
-        optimizer.step();
+		optimizer.zero_grad();
+		loss.backward();
+		optimizer.step();
 
-        Loss += loss.template item<float>();
-        Acc += acc.template item<float>();
+		Loss += loss.template item<float>();
 
-        if (index++ % 2 == 0) {
-            auto end = std::min(data_size, (index + 1) * 8);
+		// calculate average loss
+		auto end = std::min(size, (index + 1) * batch_size);
+		std::cout << "===================== Epoch: " << index << " => Loss: " << Loss / (end) << std::endl;
+		index += 1;
+	}
+	std::cout << "Training finished" << std::endl;
 
-            std::cout << "Train" << "\tLoss: " << Loss / end << "\tAcc: " << Acc / end << std::endl;
-        }
-        // TODO (https://github.com/pytorch/examples/blob/master/cpp/custom-dataset/custom-dataset.cpp)
-    }
-
-    // TODO: add date & time
-    torch::save(this, "./models/model.pt");
+    // TODO: add timestamp
+    this->saveModel("models/model.pt");
 }

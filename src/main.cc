@@ -1,4 +1,5 @@
 #include <iostream>
+#include <signal.h>
 #include <opencv2/opencv.hpp>
 
 #include "environment.hh"
@@ -7,6 +8,11 @@
 #include "neuralnet.hh"
 #include "utils.hh"
 
+bool is_running = true;
+void signal_handling(int signal) {
+	std::cout << "Signal " << signal << " received. Quitting..." << std::endl;
+	is_running = false;
+}
 
 void test_MCTS(){
 	Environment env = Environment();
@@ -29,7 +35,7 @@ void test_MCTS(){
 }
 
 void test_NN(){
-	NeuralNetwork nn = NeuralNetwork(true);
+	NeuralNetwork nn = NeuralNetwork("models/model.pt", false);
 
 	Environment board = Environment();
 	std::vector<std::string> moveList = {
@@ -59,8 +65,8 @@ void test_NN(){
 
 	// tensor to image
 	std::cout << "Converting input to image" << std::endl;
-	cv::Mat mat = utils::tensorToMat(input, 119*8, 8);
-	utils::saveCvMatToImg(mat, "tests/input.png");
+	cv::Mat mat = utils::tensorToMat(input.clone(), 119*8, 8);
+	utils::saveCvMatToImg(mat, "tests/input.png", 128);
 
 	torch::Tensor output = torch::zeros({4673});
 
@@ -75,84 +81,96 @@ void test_NN(){
 	torch::Tensor policy = output.slice(1, 0, 4672).view({73, 8, 8});
 	std::cout << "policy: " << policy.sizes() << std::endl;
 	// reshape to 73x8x8
-	cv::Mat img = utils::tensorToMat(policy, 73*8, 8);
-	utils::saveCvMatToImg(img, "tests/output.png");
+	cv::Mat img = utils::tensorToMat(policy.clone(), 73*8, 8);
+	std::cout << "image: " << img.size() << std::endl;
+	utils::saveCvMatToImg(img, "tests/output.png", 255);
 }
 
 void test_Train(){
 	NeuralNetwork nn = NeuralNetwork();
 
-	auto train_set = ChessDataSet("memory").map(torch::data::transforms::Stack<>());
+	ChessDataSet chessDataSet = ChessDataSet("memory");
+	
+	auto train_set = chessDataSet.map(torch::data::transforms::Stack<>());
 	int train_set_size = train_set.size().value();
-	int batch_size = 64;
+	int batch_size = 128;
 	
 	// data loader
 	std::cout << "Creating data loader" << std::endl;
-	auto data_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(std::move(train_set), 8);
+	auto data_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(std::move(train_set), batch_size);
 	std::cout << "Data loader created" << std::endl;
+
 
 	// optimizer
 	int learning_rate = 0.2;
 	torch::optim::Adam optimizer(nn.parameters(), learning_rate);
 
-	float Loss = 0, Acc = 0;
-
-	// TODO: fix "stack expects each tensor to be equal size, but got [0] at entry 0 and [119, 8, 8] at entry 2"
-	std::cout << "Starting training with " << train_set_size << " examples" << std::endl;
-	for (auto& batch: *data_loader){
-		std::cout << "Batch" << std::endl;
-		auto data = batch.data.to(torch::kCUDA);
-		auto target = batch.target.to(torch::kCUDA);
-		// divide policy and value targets
-		auto policy_target = target.slice(1, 0, 4672).view({73, 8, 8});
-		auto value_target = target.slice(1, 4672, 4673);
-
-		auto output = nn.forward(data);
-		auto policy_output = output.slice(1, 0, 4672).view({73, 8, 8});
-		auto value_output = output.slice(1, 4672, 4673);
-
-		// loss
-		// policy loss is categorical cross entropy
-		auto policy_loss = -torch::sum(policy_output * torch::log_softmax(policy_output, 1), 1);
-		auto value_loss = torch::mse_loss(value_output, value_target);
-		
-		auto loss = policy_loss + value_loss;
-		std::cout << "Loss: " << loss << std::endl;
-		loss.backward();
-		optimizer.step();
-
-
-		Loss += loss.item<float>();
-		Acc += torch::sum(torch::argmax(policy_output, 1) == torch::argmax(policy_target, 1)).item<float>();
-		std::cout << "Loss: " << Loss << " Acc: " << Acc << std::endl;
-	}
-	std::cout << "Training finished" << std::endl;
 	
-	// nn.train(*data_loader, optimizer, train_set_size);
+	nn.train(*data_loader, optimizer, train_set_size, batch_size);
 }
 
-int playGame(int argc, char** argv){
+int playGame(int amount_of_sims, Agent& white, Agent& black){
+	Game game = Game(amount_of_sims, Environment(), white, black);
+	return game.playGame();	
+}
+
+void playContinuously(int amount_of_sims, int parallel_games){
+	// create the neural network
+	// TODO: is it necessary to create a new network every time?
+	NeuralNetwork* nn = new NeuralNetwork("models/model.pt");
+
+	struct Winners {
+		int white = 0;
+		int black = 0;
+		int draw = 0;
+	};
+
+	struct Winners winners;
+	
+	// TODO: make parallel games possible
+
+	while (is_running){
+		Agent white = Agent("white", nn);
+		Agent black = Agent("black", nn);
+		
+		int winner = playGame(amount_of_sims, white, black);
+		std::cout << "\n\n\n";
+		if (winner == 1) {
+			std::cout << "White won" << std::endl;
+			winners.white++;
+		} else if (winner == -1) {
+			std::cout << "Black won" << std::endl;
+			winners.black++;
+		} else {
+			std::cout << "Draw" << std::endl;
+			winners.draw++;
+		}
+		std::cout << "\nCurrent score: \n";
+		std::cout << "White: " << winners.white << std::endl;
+		std::cout << "Black: " << winners.black << std::endl;
+		std::cout << "Draw: " << winners.draw << std::endl;
+		std::cout << "\n\n\n";
+	}
+}
+
+int main(int argc, char** argv) {
+	// signal handling
+	signal(SIGINT, signal_handling);
+	signal(SIGTERM, signal_handling);
+
 	int amount_of_sims = 20;
-	if (argc == 2) {
+	int parallel_games = 1;
+	if (argc >= 2) {
 		try {
 			amount_of_sims = std::stoi(argv[1]);
+			if (argc == 3){
+				parallel_games = std::stoi(argv[2]);
+			}
 		} catch (std::invalid_argument) {
 			std::cerr << "Invalid argument" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 	}
-	// create the NN
-	NeuralNetwork* nn = new NeuralNetwork();
-	// create the agents, both using the same NN for selfplay
-	Agent white = Agent("white", nn);
-	Agent black = Agent("black", nn);
-
-	// play one game
-	Game game = Game(amount_of_sims, Environment(), white, black);
-	return game.playGame();
-}
-
-int main(int argc, char** argv) {
 
 	// test mcts simulations:
 	// test_MCTS();
@@ -161,10 +179,10 @@ int main(int argc, char** argv) {
 	// test_NN();
 
 	// try training
-	test_Train();
+	// test_Train();
 
 	// play chess
-	// int winner = playGame(argc, argv);
+	playContinuously(amount_of_sims, parallel_games);
 
 
 	return 0;

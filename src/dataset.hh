@@ -10,10 +10,8 @@ using ChessData = std::pair<torch::Tensor, torch::Tensor>;
 
 class ChessDataSet : public torch::data::datasets::Dataset<ChessDataSet> {
   public:
-	ChessDataSet(std::string path);
+	explicit ChessDataSet(std::string path);
 	
-	void createDataset(std::string path);
-
 	void read(std::string filename, torch::Tensor data);
 
 	static void write(std::string filename, torch::Tensor data);

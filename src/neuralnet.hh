@@ -22,9 +22,21 @@
 #include <torch/nn/options/conv.h>
 #include <torch/nn/options/linear.h>
 
+using ChessDataLoader = torch::data::StatelessDataLoader<
+	torch::data::datasets::MapDataset<
+		ChessDataSet, 
+		torch::data::transforms::Stack<
+			torch::data::Example<
+				at::Tensor, at::Tensor
+			>
+		>
+	>, 
+	torch::data::samplers::RandomSampler
+>;
+
 class NeuralNetwork : public torch::nn::Module {
   public:
-    NeuralNetwork(bool useCPU=false);
+    NeuralNetwork(std::string path = "", bool useCPU=false);
 
     void buildNetwork();
 
@@ -32,8 +44,11 @@ class NeuralNetwork : public torch::nn::Module {
 
     torch::Tensor forward(torch::Tensor x);
 
-    template <typename DataLoader>
-    void train(DataLoader &loader, torch::optim::Optimizer &optimizer, int data_size);
+    void train(ChessDataLoader &loader, torch::optim::Optimizer &optimizer, int data_size, int batch_size);
+
+    bool loadModel(std::string path);
+
+    bool saveModel(std::string path);
 
   private:
     // set the device depending on if cuda is available

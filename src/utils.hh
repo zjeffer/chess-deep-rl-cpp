@@ -16,9 +16,9 @@ namespace utils {
 
 void addboardToPlanes(torch::Tensor *planes, int start_index, thc::ChessRules *board);
 
-cv::Mat tensorToMat(const torch::Tensor &tensor, int rows, int cols);
+cv::Mat tensorToMat(torch::Tensor tensor, int rows, int cols);
 
-void saveCvMatToImg(const cv::Mat mat, const std::string &filename);
+void saveCvMatToImg(const cv::Mat mat, const std::string &filename, int multiplier = 255);
 
 bool isKnightMove(thc::Move move);
 

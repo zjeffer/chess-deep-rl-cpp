@@ -24,6 +24,7 @@ Game::Game(int simulations, Environment env, Agent white, Agent black) {
 
 void Game::reset() {
 	this->env.reset();
+	this->memory.clear();
 }
 
 int Game::playGame() {
@@ -31,6 +32,7 @@ int Game::playGame() {
 
 	int winner = 0;
 	int counter = 0;
+	thc::DRAWTYPE drawType;
 	while (!this->env.isGameOver()) {
 		this->env.printBoard();
 		
@@ -41,6 +43,11 @@ int Game::playGame() {
 		counter++;
 		if (counter > MAX_MOVES) {
 			std::cout << "Game over by move limit" << std::endl;
+			break;
+		} 
+		
+		if (this->env.getRules()->IsDraw(this->env.getCurrentPlayer(), drawType)){
+			std::cout << "Game over by draw. Reason: " << drawType << std::endl;
 			break;
 		}
 	}
@@ -87,8 +94,8 @@ void Game::play_move(){
 	std::cout << "Moves: " << std::endl;
 	for (int i = 0; i < childNodes.size(); i++) {
 		thc::Move move = childNodes[i]->getAction();
-		std::cout << "Move " << i << ": " << move.NaturalOut(this->env.getRules());
-		std::cout << " " << childNodes[i]->getVisitCount() << " visits" << std::endl;
+		// std::cout << "Move " << i << ": " << move.NaturalOut(this->env.getRules());
+		// std::cout << " " << childNodes[i]->getVisitCount() << " visits" << std::endl;
 	}
 	
 	// TODO: create distribution of moves
@@ -118,13 +125,13 @@ void Game::play_move(){
 		}
 	}
 
-	std::cout << "Chosen move: " << current->getAction().NaturalOut(this->env.getRules()) << std::endl;
+	std::cout << "Chosen move: " << this->env.getRules()->full_move_count << ". " << current->getAction().NaturalOut(this->env.getRules()) << std::endl;
 	
 	// update previous moves
 	this->previous_moves[0] = this->previous_moves[1];
 	this->previous_moves[1] = current->getAction();
 
-	std::cout << "Current prevmoves: " << this->previous_moves[0].src << "-" << this->previous_moves[0].dst << " and " << this->previous_moves[1].src << "-" << this->previous_moves[1].dst << std::endl;
+	// std::cout << "Current prevmoves: " << this->previous_moves[0].src << "-" << this->previous_moves[0].dst << " and " << this->previous_moves[1].src << "-" << this->previous_moves[1].dst << std::endl;
 
 	this->env.makeMove(current->getAction());
 }
@@ -139,40 +146,39 @@ void Game::updateMemory(int winner){
 	}
 }
 
-void Game::memoryElementToTensors(MemoryElement *memory_element, torch::Tensor* input_tensor, torch::Tensor* output_tensor) {
+void Game::memoryElementToTensors(MemoryElement *memory_element, torch::Tensor& input_tensor, torch::Tensor& output_tensor) {
 	// convert state (string) to input (boolean boards 119x8x8)
 	Environment env = Environment(memory_element->state);
-	torch::Tensor t = env.boardToInput();
-	input_tensor = &t;
+	// flatten from [1, 119, 8, 8] to [119, 8, 8]
+	input_tensor = env.boardToInput().flatten(0, 1);
 	
 	// convert the probs to the policy output
-	torch::Tensor policy_output = torch::zeros({73, 8, 8});
+	torch::Tensor policy_output = torch::full({73, 8, 8}, (float)0.0);
+	thc::ChessRules* rules = new thc::ChessRules();
+	rules->Forsyth(memory_element->state.c_str());
 	for (MoveProb moveProb : memory_element->probs){
 		thc::Move move = moveProb.move;
 		std::tuple<int, int, int> plane_tuple = utils::moveToPlaneIndex(move);
-		int plane = std::get<0>(plane_tuple);
-		int row = std::get<1>(plane_tuple);
-		int col = std::get<2>(plane_tuple);
-		policy_output[plane][row][col] = moveProb.prob;
+		policy_output[std::get<0>(plane_tuple)][std::get<1>(plane_tuple)][std::get<2>(plane_tuple)] = moveProb.prob;
 	}
 
 	// add value to end of policy output
 	torch::Tensor value_output = torch::zeros({1});
 	value_output[0] = memory_element->winner;
-	torch::Tensor o = torch::cat({policy_output.view({73*8*8}), value_output}, 0);
-	output_tensor = &o;
+	output_tensor = torch::cat({policy_output.view({73*8*8}), value_output}, 0);
 }
 
 void Game::memoryToFile(){
+	// convert MemoryElements to tensors
 	std::cout << "Converting memory elements to tensors" << std::endl;
 	torch::Tensor inputs = torch::zeros({(int)this->memory.size(), 119, 8, 8});
 	torch::Tensor outputs = torch::zeros({(int)this->memory.size(), 73*8*8 + 1});
 	for (int i = 0; i < (int)this->memory.size(); i++){
 		torch::Tensor input_tensor = torch::zeros({119, 8, 8});
 		torch::Tensor output_tensor = torch::zeros({73*8*8 + 1});
-		memoryElementToTensors(&this->memory[i], &input_tensor, &output_tensor);
-		inputs[i] = input_tensor;
-		outputs[i] = output_tensor;
+		memoryElementToTensors(&this->memory[i], input_tensor, output_tensor);
+		inputs[i] = input_tensor.clone();
+		outputs[i] = output_tensor.clone();
 	}
 
 	// create a directory for the current game
@@ -190,8 +196,17 @@ void Game::memoryToFile(){
 		std::ostringstream ss;
 		ss << std::setw(3) << std::setfill('0') << i;
 		std::string move =  "/move-" + ss.str();
-		std::cout << "Saving tensor " << i << " to file " <<  directory + move << std::endl;
 		// save pair to file
+		torch::Tensor input = inputs[i].clone();
+		torch::Tensor output = outputs[i].clone();
+		if (input.numel() == 0){
+			std::cerr << "Empty input tensor" << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		if (output.numel() == 0){
+			std::cerr << "Empty output tensor" << std::endl;
+			exit(EXIT_FAILURE);
+		}
 		torch::save(inputs[i].clone(), directory + move + "-input.pt");
 		torch::save(outputs[i].clone(), directory + move + "-output.pt");
 	}

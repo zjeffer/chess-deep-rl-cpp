@@ -77,20 +77,21 @@ float MCTS::expand(Node* node){
 	Environment env = Environment(node->getFen());
 	torch::Tensor inputState = env.boardToInput();
 	
-	// outputs
-	torch::Tensor output_probs;
-	float output_value = 0.0;
-
+	// output of neural network
 	torch::Tensor output;
-
+	
 	// send input to neural network
 	this->nn->predict(inputState, output);
+	// get policy and value
+	torch::Tensor output_policy = output.slice(1, 0, 4672).view({73, 8, 8});
+	float output_value = output.slice(1, 4672, 4673).item<float>();
+
 
 	// output to moves
 	std::vector<thc::Move> legal_moves;
 	env.getLegalMoves(legal_moves);
 	
-	std::map<thc::Move, float> moveProbs = utils::outputProbsToMoves(output_probs, legal_moves);
+	std::map<thc::Move, float> moveProbs = utils::outputProbsToMoves(output_policy, legal_moves);
 
 	// add nodes for every move
 	for (int i = 0; i < (int)legal_moves.size(); i++) {

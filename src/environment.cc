@@ -27,7 +27,7 @@ bool Environment::isGameOver() {
 
 	if (!okay){
 		std::cerr << "Error: Game received illegal position" << std::endl;
-		return false;
+		return true;
 	}
 
 	return this->terminalState != thc::TERMINAL::NOT_TERMINAL;
@@ -94,7 +94,7 @@ torch::Tensor Environment::boardToInput() {
     input[14*8 + 6] = torch::full({8, 8}, this->rules.half_move_clock);
     
     // expand dims
-    input = input.unsqueeze(0); // TODO: fix tensorToMat function which probably broke here
+    input = input.unsqueeze(0);
     return input;
 }
 
