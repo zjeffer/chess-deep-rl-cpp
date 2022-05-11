@@ -111,8 +111,14 @@ bool Node::getPlayer(){
 	while (this->fen[i] != ' '){
 		i++;
 	}
-
-	return this->fen[i+1] == 'w';
+	if(this->fen[i+1] == 'w'){
+		return true;
+	} else if (this->fen[i+1] == 'b') {
+		return false;
+	} else {
+		std::cerr << "error: getPlayer: not white or black" << std::endl;
+		exit(1);
+	}
 }
 
 thc::Move Node::getAction(){

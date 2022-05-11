@@ -27,7 +27,7 @@ bool Environment::isGameOver() {
 
 	if (!okay){
 		std::cerr << "Error: Game received illegal position" << std::endl;
-		return true;
+		exit(1);
 	}
 
 	return this->terminalState != thc::TERMINAL::NOT_TERMINAL;

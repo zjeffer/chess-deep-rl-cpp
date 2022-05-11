@@ -2,6 +2,7 @@
 #include <chrono>
 #include <iostream>
 
+#include "common.hpp"
 #include "chess/thc.hh"
 #include "mcts.hh"
 #include "tqdm.h"
@@ -21,7 +22,7 @@ MCTS::~MCTS() {
 void MCTS::run_simulations(int num_simulations) {
 	printf("Running %d simulations...\n", num_simulations);
 	tqdm bar;
-	for (int i = 0; i < num_simulations; i++) {
+	for (int i = 0; i < num_simulations && g_running; i++) {
 		bar.progress(i, num_simulations);
 		// selection
 		Node* leaf = select(this->root);
@@ -52,7 +53,7 @@ Node* MCTS::select(Node* root){
 		Node* best_child = children[rand() % children.size()];
 		float best_score = -1;
 		for (int i = 0; i < (int)children.size(); i++) {
-			// std::cout << "Child " << i << ": " << children[i]->getQ() << " + " << children[i]->getUCB() << std::endl;
+			std::cout << "Child " << i << ": " << children[i]->getQ() << " + " << children[i]->getUCB() << ". Prior: " << children[i]->getPrior() << std::endl;
 			Node* child = children[i];
 			float score = child->getPUCTScore();
 			if (score > best_score) {

@@ -11,6 +11,12 @@ Game::Game(int simulations, Environment env, Agent white, Agent black) {
 	this->white = white;
 	this->black = black;
 
+	if(env.getCurrentPlayer()){
+		this->white.updateMCTS(new Node(env.getFen(), nullptr, thc::Move(), 0.0));
+	} else {
+		this->black.updateMCTS(new Node(env.getFen(), nullptr, thc::Move(), 0.0));
+	}
+
 	this->previous_moves = new thc::Move[2];
 
 	// create random id
@@ -27,9 +33,7 @@ void Game::reset() {
 	this->memory.clear();
 }
 
-int Game::playGame() {
-	this->reset();
-
+int Game::playGame(bool stochastic) {
 	int winner = 0;
 	int counter = 0;
 	thc::DRAWTYPE drawType;
@@ -64,6 +68,8 @@ int Game::playGame() {
 
 	this->memoryToFile();
 
+	this->reset();
+
 	return winner;
 }
 
@@ -90,6 +96,11 @@ void Game::play_move(){
 	// save element to memory
 	this->saveToMemory(element);
 
+	if ((int)childNodes.size() == 0){
+		std::cerr << "No moves available" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+
 	// print moves
 	std::cout << "Moves: " << std::endl;
 	for (int i = 0; i < childNodes.size(); i++) {
@@ -97,43 +108,53 @@ void Game::play_move(){
 		// std::cout << "Move " << i << ": " << move.NaturalOut(this->env.getRules());
 		// std::cout << " " << childNodes[i]->getVisitCount() << " visits" << std::endl;
 	}
-	
-	// TODO: create distribution of moves
-	/* 
-	float total_probability = 0;
-	for (int i = 0; i < (int)element.probs.size(); i++){
-		total_probability += element.probs[i].prob;
-	}
-	float p = (rand() / static_cast<float>(RAND_MAX)) * total_probability;
-	MoveProb* current = &element.probs[0];
-	while ((p -= current->prob) > 0) {
-		current++;
-	} 
-	*/
-	
-	// get move with max visit count
-	if ((int)childNodes.size() == 0){
-		std::cerr << "No moves available" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	Node* current = childNodes[rand() % childNodes.size()];
-	int maxVisits = 0;
-	for(int i = 0; i < (int)childNodes.size(); i++){
-		if (childNodes[i]->getVisitCount() >= maxVisits){
-			maxVisits = childNodes[i]->getVisitCount();
-			current = childNodes[i];
-		}
-	}
 
-	std::cout << "Chosen move: " << this->env.getRules()->full_move_count << ". " << current->getAction().NaturalOut(this->env.getRules()) << std::endl;
+
+	// TODO: if stochastic or deterministic
+	thc::Move bestMove;
+
+	if (this->stochastic){
+		bestMove = getBestMoveDeterministic(element.probs);
+	} else {
+		bestMove = getBestMoveStochastic(element.probs);
+	}	
+
+	std::cout << "Chosen move: " << this->env.getRules()->full_move_count << ". " << bestMove.NaturalOut(this->env.getRules()) << std::endl;
 	
 	// update previous moves
 	this->previous_moves[0] = this->previous_moves[1];
-	this->previous_moves[1] = current->getAction();
+	this->previous_moves[1] = bestMove;
 
 	// std::cout << "Current prevmoves: " << this->previous_moves[0].src << "-" << this->previous_moves[0].dst << " and " << this->previous_moves[1].src << "-" << this->previous_moves[1].dst << std::endl;
 
-	this->env.makeMove(current->getAction());
+	this->env.makeMove(bestMove);
+}
+
+
+thc::Move Game::getBestMoveStochastic(std::vector<MoveProb> &probs){
+	float total_probability = 0;
+	for (int i = 0; i < (int)probs.size(); i++){
+		total_probability += probs[i].prob;
+	}
+	float p = (rand() / static_cast<float>(RAND_MAX)) * total_probability;
+	MoveProb* current = &probs[0];
+	while ((p -= current->prob) > 0) {
+		current++;
+	}
+	return current->move;
+}
+
+thc::Move Game::getBestMoveDeterministic(std::vector<MoveProb> &probs){
+	// get move where probs.prob is highest
+	float max_prob = 0;
+	int max_index = 0;
+	for (int i = 0; i < (int)probs.size(); i++){
+		if (probs[i].prob > max_prob){
+			max_prob = probs[i].prob;
+			max_index = i;
+		}
+	}
+	return probs[max_index].move;	
 }
 
 void Game::saveToMemory(MemoryElement element) {

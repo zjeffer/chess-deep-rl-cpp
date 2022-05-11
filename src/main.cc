@@ -2,16 +2,16 @@
 #include <signal.h>
 #include <opencv2/opencv.hpp>
 
+#include "common.hpp"
 #include "environment.hh"
 #include "mcts.hh"
 #include "game.hh"
 #include "neuralnet.hh"
 #include "utils.hh"
 
-bool is_running = true;
 void signal_handling(int signal) {
 	std::cout << "Signal " << signal << " received. Quitting..." << std::endl;
-	is_running = false;
+	g_running = false;
 }
 
 void test_MCTS(){
@@ -129,7 +129,7 @@ void playContinuously(int amount_of_sims, int parallel_games){
 	
 	// TODO: make parallel games possible
 
-	while (is_running){
+	while (g_running){
 		Agent white = Agent("white", nn);
 		Agent black = Agent("black", nn);
 		
@@ -151,6 +151,12 @@ void playContinuously(int amount_of_sims, int parallel_games){
 		std::cout << "Draw: " << winners.draw << std::endl;
 		std::cout << "\n\n\n";
 	}
+}
+
+void testPosition(std::string fen){
+	Environment env = Environment(fen);
+	Game game = Game(400, env);
+	game.playGame();
 }
 
 int main(int argc, char** argv) {
@@ -182,8 +188,9 @@ int main(int argc, char** argv) {
 	// test_Train();
 
 	// play chess
-	playContinuously(amount_of_sims, parallel_games);
+	// playContinuously(amount_of_sims, parallel_games);
 
+	testPosition("5br1/2p1pqpp/Qp1pk3/n2n1p1P/4rRB1/4P1P1/1PPP1K2/R1B3N1 b - - 0 1");
 
 	return 0;
 }

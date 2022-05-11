@@ -25,13 +25,29 @@ class Game {
 	 * 
 	 * @return int: the winner: 1 for white, -1 for black, 0 for draw 
 	 */
-    int playGame();
+    int playGame(bool stochastic = true);
 
 	/**
 	 * @brief Play one move.
 	 * 
 	 */
     void play_move();
+
+	/**
+	 * @brief Using a uniform random distribution, select the best move
+	 * 
+	 * @param probs 
+	 * @return thc::Move 
+	 */
+	thc::Move getBestMoveStochastic(std::vector<MoveProb> &probs);
+
+	/**
+	 * @brief Get the best move based on the visit count of all moves
+	 * 
+	 * @param probs 
+	 * @return thc::Move 
+	 */
+	thc::Move getBestMoveDeterministic(std::vector<MoveProb> &probs);
 
 	/**
 	 * @brief Add the given MemoryElement to the current memory.
@@ -72,6 +88,8 @@ class Game {
   private:
 	// holds the amount of simulations to run every move
 	int simulations;
+
+	bool stochastic = true;
 
 	// the environment the agents will interact with
 	Environment env;
