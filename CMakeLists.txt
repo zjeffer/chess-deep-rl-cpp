@@ -24,4 +24,9 @@ file (GLOB SOURCE_FILES
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} "${TORCH_LIBRARIES}" )
+
+add_library(libgomp SHARED IMPORTED)
+set_property(TARGET libgomp PROPERTY IMPORTED_LOCATION "/usr/lib/libgomp.so")
+target_link_libraries(${PROJECT_NAME} libgomp)
+
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
