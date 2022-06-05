@@ -346,7 +346,7 @@ public:
            "        "
            "        "
            "PPPPPPPP"
-           "RNBQKBNR" );
+           "RNBQKBNR");
         enpassant_target = SQUARE_INVALID;
         wking  = true;
         wqueen = true;

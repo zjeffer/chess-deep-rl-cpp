@@ -3257,9 +3257,9 @@ void ChessRules::PopMove(Move &m) {
             squares[m.src] = 'P';
         } else {
             squares[m.src] = 'p';
-            squares[m.dst] = m.capture;
-            break;
         }
+        squares[m.dst] = m.capture;
+        break;
 
     // White enpassant re-insert black pawn south of destination
     case SPECIAL_WEN_PASSANT:
@@ -3322,7 +3322,7 @@ bool ChessRules::AttackedSquare(Square square, bool enemy_is_white) {
         lte ray_len = *ptr++;
         while (ray_len--) {
             dst = (Square)*ptr++;
-            unsigned char piece = squares[dst];
+            char piece = squares[dst];
 
             // If square not occupied (empty), continue
             if (IsEmptySquare(piece))
