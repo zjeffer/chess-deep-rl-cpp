@@ -2,122 +2,30 @@
 #include <signal.h>
 #include <opencv2/opencv.hpp>
 
-#include "common.hpp"
 #include "environment.hh"
 #include "mcts.hh"
 #include "game.hh"
 #include "neuralnet.hh"
 #include "utils.hh"
+#include "common.hh"
 
 void signal_handling(int signal) {
-	std::cout << "Signal " << signal << " received. Quitting..." << std::endl;
+	G3LOG(INFO) << "Signal " << signal << " received. Quitting...";
 	g_running = false;
 }
 
-void test_MCTS(){
-	Environment env = Environment();
-	std::cout << env.getFen() << std::endl;
-
-	// test mcts tree
-	MCTS mcts = MCTS(new Node(), new NeuralNetwork());
-
-	// run sims
-	mcts.run_simulations(400);
-
-	// show actions of root
-	Node* root = mcts.getRoot();
-	std::vector<Node*> nodes = root->getChildren();
-	thc::ChessRules* cr = env.getRules();
-	printf("Possible moves in state %s: \n", env.getFen().c_str());
-	for (int i = 0; i < (int)nodes.size(); i++) {
-		printf("%s \t Prior: %f \t Q: %f \t U: %f\n", nodes[i]->getAction().NaturalOut(cr).c_str(), nodes[i]->getPrior(), nodes[i]->getQ(), nodes[i]->getUCB());
-	}
-}
-
-void test_NN(){
-	NeuralNetwork nn = NeuralNetwork("models/model.pt", false);
-
-	Environment board = Environment();
-	std::vector<std::string> moveList = {
-		"e2e4", 
-		"e7e5",
-		"g1f3",
-		"b8c6",
-		"f1c4",
-		"f8c5",
-		"e1g1"
-	};
-
-	// play the moves
-	for (std::string moveString : moveList){
-		thc::Move move;
-		if (move.TerseIn(board.getRules(), moveString.c_str())){
-			board.makeMove(move);
-		} else {
-			std::cerr << "Invalid move: " << moveString << std::endl;
-			exit(EXIT_FAILURE);
-		}
-	}
-
-	// test board to input
-	std::cout << "Converting board to input state" << std::endl;
-	torch::Tensor input = board.boardToInput();
-
-	// tensor to image
-	std::cout << "Converting input to image" << std::endl;
-	cv::Mat mat = utils::tensorToMat(input.clone(), 119*8, 8);
-	utils::saveCvMatToImg(mat, "tests/input.png", 128);
-
-	torch::Tensor output = torch::zeros({4673});
-
-	// predict
-	nn.predict(input, output);
-
-	std::cout << "predicted" << std::endl;
-
-	// value is the last element of the output tensor
-	torch::Tensor value = output.slice(1, 4672, 4673);
-	std::cout << "value: " << value << std::endl;
-	torch::Tensor policy = output.slice(1, 0, 4672).view({73, 8, 8});
-	std::cout << "policy: " << policy.sizes() << std::endl;
-	// reshape to 73x8x8
-	cv::Mat img = utils::tensorToMat(policy.clone(), 73*8, 8);
-	std::cout << "image: " << img.size() << std::endl;
-	utils::saveCvMatToImg(img, "tests/output.png", 255);
-}
-
-void test_Train(){
-	NeuralNetwork nn = NeuralNetwork();
-
-	ChessDataSet chessDataSet = ChessDataSet("memory");
-	
-	auto train_set = chessDataSet.map(torch::data::transforms::Stack<>());
-	int train_set_size = train_set.size().value();
-	int batch_size = 128;
-	
-	// data loader
-	std::cout << "Creating data loader" << std::endl;
-	auto data_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(std::move(train_set), batch_size);
-	std::cout << "Data loader created" << std::endl;
-
-
-	// optimizer
-	int learning_rate = 0.2;
-	torch::optim::Adam optimizer(nn.parameters(), learning_rate);
-
-	
-	nn.train(*data_loader, optimizer, train_set_size, batch_size);
-}
 
 int playGame(int amount_of_sims, Agent& white, Agent& black){
 	Game game = Game(amount_of_sims, Environment(), white, black);
 	return game.playGame();	
 }
 
-void playContinuously(int amount_of_sims, int parallel_games){
+void playContinuously(std::string networkPath, int amount_of_sims, int parallel_games){
 	// create the neural network
-	// TODO: is it necessary to create a new network every time?
-	NeuralNetwork* nn = new NeuralNetwork("models/model.pt");
+	// TODO: is it necessary to load the network every time?
+	NeuralNetwork* nn = new NeuralNetwork(networkPath);
+
+	// TODO: fix multiple loads of the NN every time a new game starts
 
 	struct Winners {
 		int white = 0;
@@ -136,33 +44,43 @@ void playContinuously(int amount_of_sims, int parallel_games){
 		int winner = playGame(amount_of_sims, white, black);
 		std::cout << "\n\n\n";
 		if (winner == 1) {
-			std::cout << "White won" << std::endl;
+			G3LOG(INFO) << "White won";
 			winners.white++;
 		} else if (winner == -1) {
-			std::cout << "Black won" << std::endl;
+			G3LOG(INFO) << "Black won";
 			winners.black++;
 		} else {
-			std::cout << "Draw" << std::endl;
+			G3LOG(INFO) << "Draw";
 			winners.draw++;
 		}
-		std::cout << "\nCurrent score: \n";
-		std::cout << "White: " << winners.white << std::endl;
-		std::cout << "Black: " << winners.black << std::endl;
-		std::cout << "Draw: " << winners.draw << std::endl;
-		std::cout << "\n\n\n";
+		G3LOG(INFO) << "\nCurrent score: \n";
+		G3LOG(INFO) << "White: " << winners.white;
+		G3LOG(INFO) << "Black: " << winners.black;
+		G3LOG(INFO) << "Draw: " << winners.draw;
+		G3LOG(INFO) << "\n\n\n";
 	}
 }
 
-void testPosition(std::string fen){
+void playPosition(std::string fen){
 	Environment env = Environment(fen);
 	Game game = Game(400, env);
-	game.playGame();
+	game.getEnvironment()->printBoard();
+	// list moves
+	std::vector<thc::Move> moves;
+	game.getEnvironment()->getLegalMoves(moves);
+	for (thc::Move move : moves){
+		G3LOG(INFO) << move.NaturalOut(game.getEnvironment()->getRules())
+		<< " => " << move.src << "-" << move.dst << " => " << move.TerseOut();
+	}
+
 }
 
 int main(int argc, char** argv) {
 	// signal handling
 	signal(SIGINT, signal_handling);
 	signal(SIGTERM, signal_handling);
+
+	auto logger = std::make_unique<Logger>();
 
 	int amount_of_sims = 20;
 	int parallel_games = 1;
@@ -173,24 +91,29 @@ int main(int argc, char** argv) {
 				parallel_games = std::stoi(argv[2]);
 			}
 		} catch (std::invalid_argument) {
-			std::cerr << "Invalid argument" << std::endl;
+			G3LOG(FATAL) << "Invalid argument";
 			exit(EXIT_FAILURE);
 		}
 	}
 
 	// test mcts simulations:
-	// test_MCTS();
+	// utils::test_MCTS();
 
 	// test neural network input & outputs:
-	// test_NN();
+	// utils::test_NN("models/model.pt");
 
 	// try training
-	// test_Train();
+	// utils::test_Train();
 
 	// play chess
-	// playContinuously(amount_of_sims, parallel_games);
+	playContinuously("models/model.pt", amount_of_sims, parallel_games);
 
-	testPosition("5br1/2p1pqpp/Qp1pk3/n2n1p1P/4rRB1/4P1P1/1PPP1K2/R1B3N1 b - - 0 1");
+	// playPosition("r2q1b2/pbPkp1pr/2n2p1n/1p3P1p/P2P2P1/8/1PPQ3P/RNBK1BNR b - - 0 13");
+
+	// utils::testBug();
+
+	logger->destroy();
+	logger.reset();
 
 	return 0;
 }

@@ -57,8 +57,8 @@ void utils::addboardToPlanes(torch::Tensor *planes, int start_index, thc::ChessR
                 break;
             }
             default: {
-                std::cerr << "Error: Invalid piece type: " << board->squares[i * 8 + j] << " at " << i << "," << j << std::endl;
-                std::cerr << board->ToDebugStr() << std::endl;
+                G3LOG(FATAL) << "Error: Invalid piece type: " << board->squares[i * 8 + j] << " at " << i << "," << j << "\n"
+                << board->ToDebugStr();
                 exit(EXIT_FAILURE);
             }
             }
@@ -81,7 +81,7 @@ cv::Mat utils::tensorToMat(torch::Tensor tensor, int rows, int cols) {
     }
     // reshape tensor from 3d tensor to 2d rectangle
     torch::Tensor reshaped = torch::stack(torch::unbind(tensor, 2), 1).flatten(0, 1);
-    std::cout << "Reshaped tensor from " << tensor.sizes() << " to " << reshaped.sizes() << std::endl;
+    G3LOG(DEBUG) << "Reshaped tensor from " << tensor.sizes() << " to " << reshaped.sizes();
 
     // send to cpu, otherwise it segfaults
     reshaped = reshaped.to(torch::kCPU);
@@ -89,8 +89,8 @@ cv::Mat utils::tensorToMat(torch::Tensor tensor, int rows, int cols) {
         cv::Size{rows, cols},
         CV_32FC1,
         reshaped.data_ptr<float>());
-    std::cout << "Printing mat: " << std::endl;
-    std::cout << mat << std::endl;
+    G3LOG(DEBUG) << "Printing mat: ";
+    G3LOG(DEBUG) << mat;
     // without .clone() it will create some weird errors
     return mat.clone();
 }
@@ -98,12 +98,12 @@ cv::Mat utils::tensorToMat(torch::Tensor tensor, int rows, int cols) {
 void utils::saveCvMatToImg(const cv::Mat mat, const std::string &filename, int multiplier) {
     // multiply every pixel by a multiplier
     // this is because CV expects values from 0-255
-    std::cout << "Converting mat..." << std::endl;
+    G3LOG(DEBUG) << "Converting mat...";
     mat.convertTo(mat, CV_32FC1, multiplier);
     if (cv::imwrite(filename, mat)) {
-        std::cout << "Saved image to: " << filename << std::endl;
+        G3LOG(DEBUG) << "Saved image to: " << filename;
     } else {
-        std::cerr << "Error: Could not save image to: " << filename << std::endl;
+        G3LOG(WARNING) << "Error: Could not save image to: " << filename;
     }
 }
 
@@ -187,4 +187,114 @@ torch::Tensor utils::movesToOutputProbs(std::vector<MoveProb> moves){
 
 bool utils::createDirectory(std::string path){
     return std::filesystem::create_directories(path);
+}
+
+
+void utils::test_MCTS(){
+	Environment env = Environment();
+	G3LOG(DEBUG) << env.getFen();
+
+	// test mcts tree
+	MCTS mcts = MCTS(new Node(), new NeuralNetwork());
+
+	// run sims
+	mcts.run_simulations(400);
+
+	// show actions of root
+	Node* root = mcts.getRoot();
+	std::vector<Node*> nodes = root->getChildren();
+	thc::ChessRules* cr = env.getRules();
+	printf("Possible moves in state %s: \n", env.getFen().c_str());
+	for (int i = 0; i < (int)nodes.size(); i++) {
+		printf("%s \t Prior: %f \t Q: %f \t U: %f\n", nodes[i]->getAction().NaturalOut(cr).c_str(), nodes[i]->getPrior(), nodes[i]->getQ(), nodes[i]->getUCB());
+	}
+}
+
+void utils::test_NN(std::string networkPath){
+	NeuralNetwork nn = NeuralNetwork(networkPath, false);
+
+	Environment board = Environment();
+	std::vector<std::string> moveList = {
+		"e2e4", 
+		"e7e5",
+		"g1f3",
+		"b8c6",
+		"f1c4",
+		"f8c5",
+		"e1g1"
+	};
+
+	// play the moves
+	for (std::string moveString : moveList){
+		thc::Move move;
+		if (move.TerseIn(board.getRules(), moveString.c_str())){
+			board.makeMove(move);
+		} else {
+			G3LOG(FATAL) << "Invalid move: " << moveString;
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	// test board to input
+	G3LOG(DEBUG) << "Converting board to input state";
+	torch::Tensor input = board.boardToInput();
+
+	// tensor to image
+	G3LOG(DEBUG) << "Converting input to image";
+	cv::Mat mat = utils::tensorToMat(input.clone(), 119*8, 8);
+	utils::saveCvMatToImg(mat, "tests/input.png", 128);
+
+	torch::Tensor output = torch::zeros({4673});
+
+	// predict
+	nn.predict(input, output);
+
+	G3LOG(DEBUG) << "predicted";
+
+	// value is the last element of the output tensor
+	torch::Tensor value = output.slice(1, 4672, 4673);
+	G3LOG(DEBUG) << "value: " << value;
+	torch::Tensor policy = output.slice(1, 0, 4672).view({73, 8, 8});
+	G3LOG(DEBUG) << "policy: " << policy.sizes();
+	// reshape to 73x8x8
+	cv::Mat img = utils::tensorToMat(policy.clone(), 73*8, 8);
+	G3LOG(DEBUG) << "image: " << img.size();
+	utils::saveCvMatToImg(img, "tests/output.png", 255);
+}
+
+void utils::test_Train(){
+	NeuralNetwork nn = NeuralNetwork("models/model copy.pt");
+
+	ChessDataSet chessDataSet = ChessDataSet("memory");
+	
+	auto train_set = chessDataSet.map(torch::data::transforms::Stack<>());
+	int train_set_size = train_set.size().value();
+	int batch_size = 128;
+	
+	// data loader
+	G3LOG(DEBUG) << "Creating data loader";
+	auto data_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(std::move(train_set), batch_size);
+	G3LOG(DEBUG) << "Data loader created";
+
+
+	// optimizer
+	int learning_rate = 0.2;
+	torch::optim::Adam optimizer(nn.parameters(), learning_rate);
+
+	
+	nn.train(*data_loader, optimizer, train_set_size, batch_size);
+}
+
+void utils::testBug(){
+    std::string fen = "1r1q1b1r/p1pkPp2/7p/1p1p4/3P3Q/Pn2P1P1/1PPB3R/RN1K1BN1 b - - 0 22";
+    thc::Move move;
+    // create environment
+    Environment env = Environment(fen);
+    // make rook move up
+    if(!move.TerseIn(env.getRules(), "h8h7")){
+        G3LOG(FATAL) << "Invalid move";
+        exit(EXIT_FAILURE);
+    }
+    env.makeMove(move);
+    env.printBoard();
 }

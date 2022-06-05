@@ -11,6 +11,10 @@
 #include "chess/thc.hh"
 #include "types.hh"
 #include "mapper.hh"
+#include "environment.hh"
+#include "mcts.hh"
+#include "game.hh"
+#include "utils.hh"
 
 namespace utils {
 
@@ -29,6 +33,14 @@ std::map<thc::Move, float> outputProbsToMoves(torch::Tensor &outputProbs, std::v
 torch::Tensor movesToOutputProbs(std::vector<MoveProb> moves);
 
 bool createDirectory(std::string path);
+
+void test_MCTS();
+
+void test_NN(std::string networkPath);
+
+void test_Train();
+
+void testBug();
 
 } // namespace utils
 

@@ -4,6 +4,7 @@
 #include "agent.hh"
 #include "environment.hh"
 #include "chess/thc.hh"
+#include <random>
 
 #define MAX_MOVES 1000
 
@@ -85,6 +86,8 @@ class Game {
 	 */
 	void reset();
 
+	Environment* getEnvironment();
+
   private:
 	// holds the amount of simulations to run every move
 	int simulations;
@@ -106,6 +109,10 @@ class Game {
 	
 	// a unique id for this game
 	std::string game_id;
+
+	// for random generation
+	std::mt19937 rng;
+	std::uniform_int_distribution<int> dist;
 };
 
 #endif // GAME_HH

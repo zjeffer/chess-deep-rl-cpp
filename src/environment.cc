@@ -26,19 +26,22 @@ bool Environment::isGameOver() {
 	bool okay = this->rules.Evaluate(this->terminalState);
 
 	if (!okay){
-		std::cerr << "Error: Game received illegal position" << std::endl;
-		exit(1);
+		G3LOG(FATAL) << "Error: Game received illegal position" << std::endl;
+		exit(EXIT_FAILURE);
 	}
 
 	return this->terminalState != thc::TERMINAL::NOT_TERMINAL;
 }
 
 void Environment::reset() {
-	this->rules.Forsyth("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+	if (!this->rules.Forsyth("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")){
+        G3LOG(FATAL) << "Error: Could not reset environment" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 }
 
 void Environment::printBoard() {
-    std::cout << this->rules.ToDebugStr() << std::endl;
+    G3LOG(INFO) << "\n" << this->rules.ToDebugStr() << "\n";
 }
 
 bool Environment::getCurrentPlayer() {
@@ -49,8 +52,29 @@ std::string Environment::getFen() {
 	return this->rules.ForsythPublish();
 }
 
+int Environment::getAmountOfPieces(){
+    int pieces = 0;
+    for (int i = 0; i < 64; i++){
+        if (this->rules.squares[i] != ' '){
+            pieces++;
+        }
+    }
+    return pieces;
+}
+
 std::string Environment::makeMove(thc::Move move) {
+    // check if move is empty
+    if (!move.Valid()){
+        G3LOG(FATAL) << "Move is not valid" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    int amountOfPiecesBeforeMove = this->getAmountOfPieces();
 	this->rules.PlayMove(move);
+    int amountOfPiecesAfterMove = this->getAmountOfPieces();
+    if (abs(amountOfPiecesBeforeMove - amountOfPiecesAfterMove) > 1){
+        G3LOG(FATAL) << "Move did not result in correct amount of pieces" << std::endl;
+        exit(EXIT_FAILURE);
+    }
     return this->getFen();
 }
 

@@ -5,6 +5,7 @@
 #include <torch/data.h>
 
 #include "types.hh"
+#include "common.hh"
 
 using ChessData = std::pair<torch::Tensor, torch::Tensor>;
 

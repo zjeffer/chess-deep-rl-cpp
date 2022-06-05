@@ -645,11 +645,11 @@ public:
     //### Data
 
     // Move history is a ring array
-    Move history[256];                 // must be 256 ..
+    Move history[8192];                 // must be 8192 ..
     unsigned char history_idx;          // .. so this loops around naturally
 
     // Detail stack is a ring array
-    DETAIL detail_stack[256];           // must be 256 ..
+    DETAIL detail_stack[8192];           // must be 8192 ..
     unsigned char detail_idx;           // .. so this loops around naturally
 };
 

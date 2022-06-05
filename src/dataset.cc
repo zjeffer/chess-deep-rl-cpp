@@ -23,23 +23,22 @@ ChessDataSet::ChessDataSet(std::string path) {
                     output_path = move.path().string().replace(move.path().string().find("input"), 5, "output");
                     torch::load(outputs, output_path.c_str());
                 } catch (std::exception &e) {
-                    std::cerr << "Could not load tensor from file: " << move.path() << std::endl;
-                    std::cerr << e.what() << std::endl;
-                    exit(1);
+                    G3LOG(WARNING) << "Could not load tensor from file: " << move.path() << "\n" << e.what();
+                    exit(EXIT_FAILURE);
                 }
 
                 if (input.sizes() != torch::IntArrayRef({119, 8, 8}) || outputs.sizes() != torch::IntArrayRef({4673})) {
-                    std::cerr << "Invalid sizes for file " << move.path() << ": " << input.sizes() << " " << outputs.sizes() << std::endl;
-                    exit(1);
+                    G3LOG(WARNING) << "Invalid sizes for file " << move.path() << ": " << input.sizes() << " " << outputs.sizes();
+                    exit(EXIT_FAILURE);
                 }
                 
                 this->data.push_back(std::make_pair(input, outputs));
             }
         } else {
-            std::cout << "Skipping " << game.path().string() << std::endl;
+            G3LOG(DEBUG) << "Skipping " << game.path().string();
         }
     }
-    std::cout << "Created dataset of size " << this->data.size() << std::endl;
+    G3LOG(INFO) << "Created dataset of size " << this->data.size() ;
 }
 
 torch::data::Example<> ChessDataSet::get(size_t index) {

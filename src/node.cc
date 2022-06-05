@@ -4,6 +4,7 @@
 #include <vector>
 #include <chrono>
 #include <iostream>
+#include "common.hh"
 
 Node::Node(std::string fen, Node* parent, thc::Move action, float prior) {
 	this->fen = fen;
@@ -98,7 +99,7 @@ float Node::getQ(){
 
 float Node::getUCB(){
 	if (this->parent == nullptr){
-		std::cerr << "parent is null" << std::endl;
+		G3LOG(WARNING) << "parent is null";
 		return 0.0;
 	}
 	float exploration_rate = log((1 + this->parent->visit_count + 20000) / 20000) + 2;
@@ -116,8 +117,8 @@ bool Node::getPlayer(){
 	} else if (this->fen[i+1] == 'b') {
 		return false;
 	} else {
-		std::cerr << "error: getPlayer: not white or black" << std::endl;
-		exit(1);
+		G3LOG(FATAL) << "error: getPlayer: not white or black";
+		exit(EXIT_FAILURE);
 	}
 }
 

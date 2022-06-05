@@ -3,6 +3,7 @@
 
 #include <map>
 #include <tuple>
+#include <array>
 
 
 enum QueenDirection  {

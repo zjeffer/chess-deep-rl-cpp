@@ -3,13 +3,14 @@ cmake_minimum_required(VERSION 3.23 FATAL_ERROR)
 ######### MAIN PROJECT #########
 project(chess-rl VERSION 1.0.0)
 
+###### OpenCV ######
 find_package( OpenCV REQUIRED )
-
 message(STATUS "OpenCV library status:")
 message(STATUS "    version: ${OpenCV_VERSION}")
 message(STATUS "    libraries: ${OpenCV_LIBS}")
 message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 
+###### LibTorch ######
 set(CMAKE_PREFIX_PATH /usr/include/libtorch/share/cmake/)
 find_package(Torch REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
@@ -28,10 +29,14 @@ message(
 )
 include_directories(${G3LOG_INCLUDE_DIRS})
 
-# main files
+###### main files ######
 file (GLOB SOURCE_FILES 
   ${PROJECT_SOURCE_DIR}/src/*.cc
+  ${PROJECT_SOURCE_DIR}/src/*.hh
   ${PROJECT_SOURCE_DIR}/src/chess/*.cc
+  ${PROJECT_SOURCE_DIR}/src/chess/*.hh
+  ${PROJECT_SOURCE_DIR}/src/logger/*.cc
+  ${PROJECT_SOURCE_DIR}/src/logger/*.hh
 )
 
 # create executable

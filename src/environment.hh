@@ -25,6 +25,8 @@ class Environment {
 
 		std::string getFen();
 
+		int getAmountOfPieces();
+
 		std::string makeMove(thc::Move move);
 		std::string undoMove(thc::Move move);
 

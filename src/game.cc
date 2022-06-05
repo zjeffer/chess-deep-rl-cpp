@@ -1,9 +1,8 @@
-#include <random>
-
 #include "game.hh"
 #include "node.hh"
 #include "dataset.hh"
 #include "utils.hh"
+#include "common.hh"
 
 Game::Game(int simulations, Environment env, Agent white, Agent black) {
 	this->simulations = simulations;
@@ -20,12 +19,14 @@ Game::Game(int simulations, Environment env, Agent white, Agent black) {
 	this->previous_moves = new thc::Move[2];
 
 	// create random id
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_int_distribution<> dis(0, 999999);
+	std::random_device rd = std::random_device();
+	this->rng.seed(rd());
+	this->dist = std::uniform_int_distribution<int>(0, RAND_MAX);
+
+	std::uniform_int_distribution<int> game_id_dist = std::uniform_int_distribution<int>(0, 1000000);
 	
 	std::string current_date = std::to_string(std::time(nullptr));
-	this->game_id = "game-" + current_date + "-" + std::to_string(dis(gen));
+	this->game_id = "game-" + current_date + "-" + std::to_string(game_id_dist(this->rng));
 }
 
 void Game::reset() {
@@ -34,6 +35,7 @@ void Game::reset() {
 }
 
 int Game::playGame(bool stochastic) {
+	this->stochastic = stochastic;
 	int winner = 0;
 	int counter = 0;
 	thc::DRAWTYPE drawType;
@@ -41,17 +43,17 @@ int Game::playGame(bool stochastic) {
 		this->env.printBoard();
 		
 		this->play_move();
-		std::cout << "Value according to white: " << this->white.getMCTS()->getRoot()->getValue() << std::endl;
-		std::cout << "Value according to black: " << this->black.getMCTS()->getRoot()->getValue() << std::endl;
+		G3LOG(INFO) << "Value according to white: " << this->white.getMCTS()->getRoot()->getValue();
+		G3LOG(INFO) << "Value according to black: " << this->black.getMCTS()->getRoot()->getValue();
 
 		counter++;
 		if (counter > MAX_MOVES) {
-			std::cout << "Game over by move limit" << std::endl;
+			G3LOG(INFO) << "Game over by move limit";
 			break;
 		} 
 		
 		if (this->env.getRules()->IsDraw(this->env.getCurrentPlayer(), drawType)){
-			std::cout << "Game over by draw. Reason: " << drawType << std::endl;
+			G3LOG(INFO) << "Game over by draw. Reason: " << drawType;
 			break;
 		}
 	}
@@ -75,7 +77,7 @@ int Game::playGame(bool stochastic) {
 
 void Game::play_move(){
 	Agent* currentPlayer = this->env.getCurrentPlayer() ? &this->white : &this->black;
-	std::cout << "Current player: " << currentPlayer->getName() << std::endl;
+	G3LOG(INFO) << "Current player: " << currentPlayer->getName();
 
 	// update mcts tree with new root
 	// TODO: use child of old tree
@@ -87,6 +89,8 @@ void Game::play_move(){
 
 	std::vector<Node*> childNodes = currentPlayer->getMCTS()->getRoot()->getChildren();
 
+	// TODO: add dirichlet noise to the priors of the root node's edges
+
 	// create memory element
 	MemoryElement element;
 	element.state = this->env.getFen();
@@ -97,37 +101,51 @@ void Game::play_move(){
 	this->saveToMemory(element);
 
 	if ((int)childNodes.size() == 0){
-		std::cerr << "No moves available" << std::endl;
+		G3LOG(WARNING) << "No moves available";
 		exit(EXIT_FAILURE);
 	}
 
 	// print moves
-	std::cout << "Moves: " << std::endl;
-	for (int i = 0; i < childNodes.size(); i++) {
-		thc::Move move = childNodes[i]->getAction();
-		// std::cout << "Move " << i << ": " << move.NaturalOut(this->env.getRules());
-		// std::cout << " " << childNodes[i]->getVisitCount() << " visits" << std::endl;
+	// G3LOG(DEBUG) << "Moves: "";
+	// for (int i = 0; i < childNodes.size(); i++) {
+	// 	thc::Move move = childNodes[i]->getAction();
+	// 	std::cout << "Move " << i << ": " << move.NaturalOut(this->env.getRules());
+	// 	std::cout << " " << childNodes[i]->getVisitCount() << " visits" << std::endl;
+	// }
+
+
+	thc::Move bestMove;
+	if (this->stochastic){
+		bestMove = getBestMoveStochastic(element.probs);
+	} else {
+		bestMove = getBestMoveDeterministic(element.probs);
 	}
 
-
-	// TODO: if stochastic or deterministic
-	thc::Move bestMove;
-
-	if (this->stochastic){
-		bestMove = getBestMoveDeterministic(element.probs);
-	} else {
-		bestMove = getBestMoveStochastic(element.probs);
+	// see if move is valid
+	if (!bestMove.Valid()){
+		G3LOG(WARNING) << "Invalid move";
+		exit(EXIT_FAILURE);
 	}	
 
-	std::cout << "Chosen move: " << this->env.getRules()->full_move_count << ". " << bestMove.NaturalOut(this->env.getRules()) << std::endl;
+	G3LOG(INFO) << this->env.getFen();
+	G3LOG(INFO) << "Chosen move: " << this->env.getRules()->full_move_count << ". " << bestMove.NaturalOut(this->env.getRules());
 	
 	// update previous moves
 	this->previous_moves[0] = this->previous_moves[1];
 	this->previous_moves[1] = bestMove;
 
-	// std::cout << "Current prevmoves: " << this->previous_moves[0].src << "-" << this->previous_moves[0].dst << " and " << this->previous_moves[1].src << "-" << this->previous_moves[1].dst << std::endl;
+	// G3LOG(DEBUG) << "Current prevmoves: " << this->previous_moves[0].src << "-" << this->previous_moves[0].dst << " and " << this->previous_moves[1].src << "-" << this->previous_moves[1].dst;
 
 	this->env.makeMove(bestMove);
+	thc::ILLEGAL_REASON reason;
+	if (!this->env.getRules()->IsLegal(reason)){
+		G3LOG(WARNING) << "Reached an illegal position after the last move. Reason: " << reason;
+		this->env.printBoard();
+		G3LOG(DEBUG) << this->env.getFen();
+		G3LOG(DEBUG) << bestMove.src << "-" << bestMove.dst;
+		G3LOG(DEBUG) << bestMove.special;
+		exit(EXIT_FAILURE);
+	}
 }
 
 
@@ -136,12 +154,12 @@ thc::Move Game::getBestMoveStochastic(std::vector<MoveProb> &probs){
 	for (int i = 0; i < (int)probs.size(); i++){
 		total_probability += probs[i].prob;
 	}
-	float p = (rand() / static_cast<float>(RAND_MAX)) * total_probability;
-	MoveProb* current = &probs[0];
-	while ((p -= current->prob) > 0) {
-		current++;
+	float p = (this->dist(this->rng) / static_cast<float>(RAND_MAX)) * total_probability;
+	int index = 0;
+	while ((p -= probs[index].prob) > 0) {
+		index++;
 	}
-	return current->move;
+	return probs[index].move;
 }
 
 thc::Move Game::getBestMoveDeterministic(std::vector<MoveProb> &probs){
@@ -155,6 +173,10 @@ thc::Move Game::getBestMoveDeterministic(std::vector<MoveProb> &probs){
 		}
 	}
 	return probs[max_index].move;	
+}
+
+Environment* Game::getEnvironment(){
+	return &this->env;
 }
 
 void Game::saveToMemory(MemoryElement element) {
@@ -191,7 +213,7 @@ void Game::memoryElementToTensors(MemoryElement *memory_element, torch::Tensor& 
 
 void Game::memoryToFile(){
 	// convert MemoryElements to tensors
-	std::cout << "Converting memory elements to tensors" << std::endl;
+	G3LOG(DEBUG) << "Converting memory elements to tensors";
 	torch::Tensor inputs = torch::zeros({(int)this->memory.size(), 119, 8, 8});
 	torch::Tensor outputs = torch::zeros({(int)this->memory.size(), 73*8*8 + 1});
 	for (int i = 0; i < (int)this->memory.size(); i++){
@@ -203,15 +225,15 @@ void Game::memoryToFile(){
 	}
 
 	// create a directory for the current game
-	std::cout << "Creating directory for game id = " << this->game_id << std::endl;
+	G3LOG(DEBUG) << "Creating directory for game id = " << this->game_id;
 	std::string directory = "memory/" + this->game_id;
 	if (!utils::createDirectory(directory)){
-		std::cerr << "Could not create directory for current game" << std::endl;
+		G3LOG(WARNING) << "Could not create directory for current game";
 		exit(EXIT_FAILURE);
 	}
 
 	// save tensors to file
-	std::cout << "Saving tensors to files" << std::endl;
+	G3LOG(DEBUG) << "Saving tensors to files";
 	for (int i = 0; i < (int)this->memory.size(); i++){
 		// get the move number with zero padding
 		std::ostringstream ss;
@@ -221,11 +243,11 @@ void Game::memoryToFile(){
 		torch::Tensor input = inputs[i].clone();
 		torch::Tensor output = outputs[i].clone();
 		if (input.numel() == 0){
-			std::cerr << "Empty input tensor" << std::endl;
+			G3LOG(WARNING) << "Empty input tensor";
 			exit(EXIT_FAILURE);
 		}
 		if (output.numel() == 0){
-			std::cerr << "Empty output tensor" << std::endl;
+			G3LOG(WARNING) << "Empty output tensor";
 			exit(EXIT_FAILURE);
 		}
 		torch::save(inputs[i].clone(), directory + move + "-input.pt");

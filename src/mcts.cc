@@ -2,7 +2,7 @@
 #include <chrono>
 #include <iostream>
 
-#include "common.hpp"
+#include "common.hh"
 #include "chess/thc.hh"
 #include "mcts.hh"
 #include "tqdm.h"
@@ -53,7 +53,7 @@ Node* MCTS::select(Node* root){
 		Node* best_child = children[rand() % children.size()];
 		float best_score = -1;
 		for (int i = 0; i < (int)children.size(); i++) {
-			std::cout << "Child " << i << ": " << children[i]->getQ() << " + " << children[i]->getUCB() << ". Prior: " << children[i]->getPrior() << std::endl;
+			// G3LOG(DEBUG) << "Child " << i << ": " << children[i]->getQ() << " + " << children[i]->getUCB() << ". Prior: " << children[i]->getPrior();
 			Node* child = children[i];
 			float score = child->getPUCTScore();
 			if (score > best_score) {
@@ -68,7 +68,7 @@ Node* MCTS::select(Node* root){
 		current = best_child;
     }
 	auto stop = std::chrono::high_resolution_clock::now();
-	// std::cout << "Selection: " << std::chrono::duration_cast<std::chrono::microseconds>(stop - start_time).count() << " microseconds for " << traversals << " traversals" << std::endl;
+	// G3LOG(DEBUG << "Selection: " << std::chrono::duration_cast<std::chrono::microseconds>(stop - start_time).count() << " microseconds for " << traversals << " traversals";
 
 	return current;
 }

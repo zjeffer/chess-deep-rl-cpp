@@ -16,6 +16,8 @@
 #include <torch/nn/modules/conv.h>
 #include <torch/nn/pimpl.h>
 
+#include <filesystem>
+
 #define CONV_FILTERS 256
 #define PLANE_SIZE 8
 #define OUTPUT_PLANES 73
@@ -123,12 +125,12 @@ torch::Tensor NeuralNetwork::forward(torch::Tensor x) {
 bool NeuralNetwork::loadModel(std::string path) {
     try {
         // load model from path
-        std::cout << "Loading model from: " << path << std::endl;
+        G3LOG(INFO) << "Loading model from: " << path;
         torch::serialize::InputArchive ia;
         ia.load_from(path);
         this->load(ia);
     } catch (const std::exception& e) {
-        std::cerr << "Error loading model: " << e.what() << std::endl;
+        G3LOG(WARNING) << "Error loading model: " << e.what();
         return false;
     }
     return true;
@@ -137,29 +139,29 @@ bool NeuralNetwork::loadModel(std::string path) {
 bool NeuralNetwork::saveModel(std::string path){
     try {
         // save model to path
-        std::cout << "Saving model to: " << path << std::endl;
+        G3LOG(INFO) << "Saving model to: " << path;
         torch::serialize::OutputArchive oa;
         this->save(oa);
         oa.save_to(path);
     } catch (const std::exception& e) {
-        std::cerr << "Error saving model: " << e.what() << std::endl;
+        G3LOG(WARNING) << "Error saving model: " << e.what();
         return false;
     }
     return true;
 }
 
 NeuralNetwork::NeuralNetwork(std::string path, bool useCPU) : torch::nn::Module() {
-    std::cout << "Creating NeuralNetwork object..." << std::endl;
+    G3LOG(DEBUG) << "Creating NeuralNetwork object...";
 
     if (useCPU) {
-        std::cout << "Running on CPU." << std::endl;
+        G3LOG(DEBUG) << "Running on CPU.";
         this->device = torch::Device(torch::kCPU);
     } else {
         if (torch::cuda::is_available() ) {
-            std::cout << "CUDA loaded. Device count: " << torch::cuda::device_count() << std::endl;
+            G3LOG(DEBUG) << "CUDA loaded. Device count: " << torch::cuda::device_count();
             this->device = torch::Device(torch::kCUDA);
         } else {
-            std::cout << "CUDA not available. Running on CPU." << std::endl;
+            G3LOG(WARNING) << "CUDA not available. Running on CPU.";
             this->device = torch::Device(torch::kCPU);
         }
     }
@@ -167,19 +169,27 @@ NeuralNetwork::NeuralNetwork(std::string path, bool useCPU) : torch::nn::Module(
     this->buildNetwork();
     // if the path is given, load the model
     if (!path.empty()){
-        this->loadModel(path);
+        // if path exists
+        if (std::filesystem::is_regular_file(path)){
+            this->loadModel(path);
+        } else {
+            G3LOG(WARNING) << "Model file does not exist. Creating new model.";
+            if(!this->saveModel(path)){
+                exit(EXIT_FAILURE);
+            }
+        }
     }
 
     // random input
-    std::cout << "Testing random input..." << std::endl;
+    G3LOG(DEBUG) << "Testing random input...";
     torch::Tensor input = torch::rand({1, 119, 8, 8});
     torch::Tensor output;
     this->predict(input, output);
     if (output.dim() != 2){
-        std::cerr << "Failed to test model with random input" << std::endl;
+        G3LOG(FATAL) << "Failed to test model with random input";
         exit(EXIT_FAILURE);
     }
-    std::cout << "Output successful" << std::endl;
+    G3LOG(DEBUG) << "Output successful";
 }
 
 void NeuralNetwork::predict(torch::Tensor &input, torch::Tensor &output) {
@@ -189,11 +199,11 @@ void NeuralNetwork::predict(torch::Tensor &input, torch::Tensor &output) {
 void NeuralNetwork::train(ChessDataLoader &loader, torch::optim::Optimizer &optimizer, int data_size, int batch_size) {
     float Loss = 0, Acc = 0;
 
-	std::cout << "Starting training with " << data_size << " examples" << std::endl;
+	G3LOG(INFO) << "Starting training with " << data_size << " examples";
 	int index = 0;
 	for (auto batch : loader) {
 		int size = batch.data.sizes()[0];
-		std::cout << "Batch of size " << size << std::endl;
+		G3LOG(INFO) << "Batch of size " << size;
 		auto data = batch.data.to(torch::kCUDA);
 		auto target = batch.target.to(torch::kCUDA);
 		// divide policy and value targets
@@ -209,22 +219,22 @@ void NeuralNetwork::train(ChessDataLoader &loader, torch::optim::Optimizer &opti
 		auto policy_loss = -torch::sum(policy_target * torch::clamp(torch::log(policy_output), -10e1, 10e1));
 		auto value_loss = torch::mse_loss(value_output, value_target);
 		
-		std::cout << "Policy loss: " << policy_loss << std::endl;
-		std::cout << "Value loss: " << value_loss << std::endl;
+		G3LOG(INFO) << "Policy loss: " << policy_loss;
+		G3LOG(INFO) << "Value loss: " << value_loss;
 		auto loss = torch::add(policy_loss, value_loss);
 
 		optimizer.zero_grad();
 		loss.backward();
 		optimizer.step();
 
-		Loss += loss.template item<float>();
+		Loss += loss.item<float>();
 
 		// calculate average loss
-		auto end = std::min(size, (index + 1) * batch_size);
-		std::cout << "===================== Epoch: " << index << " => Loss: " << Loss / (end) << std::endl;
+		auto end = std::min(data_size, (index + 1) * batch_size);
+		G3LOG(INFO) << "===================== Epoch: " << index << " => Loss: " << Loss / (end);
 		index += 1;
 	}
-	std::cout << "Training finished" << std::endl;
+	G3LOG(INFO) << "Training finished";
 
     // TODO: add timestamp
     this->saveModel("models/model.pt");
