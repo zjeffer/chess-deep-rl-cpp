@@ -90,7 +90,9 @@
 		"*.txx": "cpp",
 		"__bit_reference": "cpp",
 		"__string": "cpp",
-		"ios": "cpp"
+		"ios": "cpp",
+		"charconv": "cpp",
+		"span": "cpp"
 	},
 	"C_Cpp.errorSquiggles": "Enabled"
 }
