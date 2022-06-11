@@ -39,11 +39,7 @@ RUN sudo chown -R user: ./vendor/g3log/*
 
 RUN cd /app/vendor/g3log/build && cmake .. && sudo cmake --build . --target install
 
-RUN paru -S cuda --noconfirm
-RUN paru -S cudnn --noconfirm
-RUN paru -S qt5 --noconfirm
-RUN paru -S openmpi --noconfirm
-RUN paru -S fmt --noconfirm
+RUN paru -S cuda cudnn qt5 openmpi fmt --noconfirm
 
 COPY . .
 
