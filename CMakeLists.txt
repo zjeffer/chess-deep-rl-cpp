@@ -42,7 +42,7 @@ file (GLOB SOURCE_FILES
 # create executable
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 # link libraries (opencv, torch, etc)
-find_package(Qt5 REQUIRED COMPONENTS Widgets Core Gui Sql PrintSupport WebEngineWidgets)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Core)
 target_link_libraries(${PROJECT_NAME} Qt5::Widgets)
 target_link_libraries(${PROJECT_NAME} Qt5::Core)
 
