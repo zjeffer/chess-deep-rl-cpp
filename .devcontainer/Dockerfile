@@ -10,7 +10,7 @@ RUN wget https://download.pytorch.org/libtorch/cu113/libtorch-cxx11-abi-shared-w
 	&& mv libtorch /usr/include/libtorch
 
 # compilers, opencv, nvidia 
-RUN pacman -Syyu --noconfirm cmake make gcc opencv git
+RUN pacman -Syyu --noconfirm cmake make gcc opencv git vtk hdf5 glew
 
 # add user
 ################# USER & GROUP CREATION #################
@@ -32,16 +32,20 @@ RUN sudo cp /root/.zshrc /home/$USERNAME/.zshrc
 
 RUN sudo chown -R $USERNAME:$USERNAME /app
 
-# nvidia container
-RUN git clone https://aur.archlinux.org/nvidia-container-runtime.git \
-	&& cd nvidia-container-runtime \
-	&& makepkg -si --noconfirm \
-	&& cd .. \
-	&& rm -rf nvidia-container-runtime
-
 # g3log
 COPY ./vendor/g3log/ ./vendor/g3log/
-RUN mkdir /app/vendor/g3log/build
-RUN cd /app/vendor/g3log/build && cmake .. && cmake --build . --target install
+RUN sudo mkdir /app/vendor/g3log/build
+RUN sudo chown -R user: ./vendor/g3log/*
+
+RUN cd /app/vendor/g3log/build && cmake .. && sudo cmake --build . --target install
 
 COPY src ./src
+RUN paru -S cuda --noconfirm
+RUN paru -S cudnn --noconfirm
+RUN paru -S qt5 --noconfirm
+RUN paru -S openmpi --noconfirm
+RUN paru -S fmt --noconfirm
+
+
+
+

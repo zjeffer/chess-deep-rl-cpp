@@ -42,12 +42,12 @@ file (GLOB SOURCE_FILES
 # create executable
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 # link libraries (opencv, torch, etc)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Core Gui Sql PrintSupport WebEngineWidgets)
+target_link_libraries(${PROJECT_NAME} Qt5::Widgets)
+target_link_libraries(${PROJECT_NAME} Qt5::Core)
+
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} "${TORCH_LIBRARIES}" ${G3LOG_LIBRARIES})
 
-# fix libgomp error
-# add_library(libgomp SHARED IMPORTED)
-# set_property(TARGET libgomp PROPERTY IMPORTED_LOCATION "/usr/lib/libgomp.so")
-# target_link_libraries(${PROJECT_NAME} libgomp)
 
 # set c++ standard
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
