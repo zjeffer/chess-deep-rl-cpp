@@ -4,7 +4,7 @@
 #include "utils.hh"
 #include "common.hh"
 
-Game::Game(int simulations, Environment env, Agent white, Agent black) {
+Game::Game(int simulations, Environment& env, Agent& white, Agent& black) {
 	this->simulations = simulations;
 	this->env = env;
 	this->white = white;
@@ -39,10 +39,10 @@ int Game::playGame(bool stochastic) {
 	int winner = 0;
 	int counter = 0;
 	thc::DRAWTYPE drawType;
-	while (!this->env.isGameOver()) {
+	while (!this->env.isGameOver() && g_running) {
 		this->env.printBoard();
 		
-		this->play_move();
+		this->playMove();
 		G3LOG(INFO) << "Value according to white: " << this->white.getMCTS()->getRoot()->getValue();
 		G3LOG(INFO) << "Value according to black: " << this->black.getMCTS()->getRoot()->getValue();
 
@@ -53,15 +53,15 @@ int Game::playGame(bool stochastic) {
 		} 
 		
 		if (this->env.getRules()->IsDraw(this->env.getCurrentPlayer(), drawType)){
-			G3LOG(INFO) << "Game over by draw. Reason: " << drawType;
+			this->env.printDrawType(drawType);
 			break;
 		}
 	}
 
 	if (this->env.isGameOver()){
-		if (this->env.terminalState == thc::TERMINAL_WCHECKMATE){
+		if (this->env.terminalState == thc::TERMINAL_BCHECKMATE){
 			winner = 1;
-		} else if(this->env.terminalState == thc::TERMINAL_BCHECKMATE) {
+		} else if(this->env.terminalState == thc::TERMINAL_WCHECKMATE) {
 			winner = -1;
 		}
 	}
@@ -75,21 +75,18 @@ int Game::playGame(bool stochastic) {
 	return winner;
 }
 
-void Game::play_move(){
+void Game::playMove(){
 	Agent* currentPlayer = this->env.getCurrentPlayer() ? &this->white : &this->black;
-	G3LOG(INFO) << "Current player: " << currentPlayer->getName();
+	G3LOG(INFO) << "Current player: " << currentPlayer->getName();	
 
-	// update mcts tree with new root
-	// TODO: use child of old tree
-	Node* newRoot = new Node(this->env.getFen(), nullptr, thc::Move(), 0);
-	currentPlayer->updateMCTS(newRoot);
+	// update mcts tree
+	currentPlayer->getMCTS()->setRoot(new Node(this->env.getFen(), nullptr, thc::Move(), 0.0));
 
 	// run the sims
 	currentPlayer->getMCTS()->run_simulations(this->simulations);
 
 	std::vector<Node*> childNodes = currentPlayer->getMCTS()->getRoot()->getChildren();
 
-	// TODO: add dirichlet noise to the priors of the root node's edges
 
 	// create memory element
 	MemoryElement element;
@@ -127,7 +124,7 @@ void Game::play_move(){
 		exit(EXIT_FAILURE);
 	}	
 
-	G3LOG(INFO) << this->env.getFen();
+	G3LOG(DEBUG) << this->env.getFen();
 	G3LOG(INFO) << "Chosen move: " << this->env.getRules()->full_move_count << ". " << bestMove.NaturalOut(this->env.getRules());
 	
 	// update previous moves
@@ -213,7 +210,6 @@ void Game::memoryElementToTensors(MemoryElement *memory_element, torch::Tensor& 
 
 void Game::memoryToFile(){
 	// convert MemoryElements to tensors
-	G3LOG(DEBUG) << "Converting memory elements to tensors";
 	torch::Tensor inputs = torch::zeros({(int)this->memory.size(), 119, 8, 8});
 	torch::Tensor outputs = torch::zeros({(int)this->memory.size(), 73*8*8 + 1});
 	for (int i = 0; i < (int)this->memory.size(); i++){
@@ -233,7 +229,6 @@ void Game::memoryToFile(){
 	}
 
 	// save tensors to file
-	G3LOG(DEBUG) << "Saving tensors to files";
 	for (int i = 0; i < (int)this->memory.size(); i++){
 		// get the move number with zero padding
 		std::ostringstream ss;

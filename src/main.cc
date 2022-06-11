@@ -16,7 +16,8 @@ void signal_handling(int signal) {
 
 
 int playGame(int amount_of_sims, Agent& white, Agent& black){
-	Game game = Game(amount_of_sims, Environment(), white, black);
+	Environment env = Environment();
+	Game game = Game(amount_of_sims, env, white, black);
 	return game.playGame();	
 }
 
@@ -61,18 +62,20 @@ void playContinuously(std::string networkPath, int amount_of_sims, int parallel_
 	}
 }
 
-void playPosition(std::string fen){
+void playPosition(std::string fen, int amount_of_sims){
+	std::cout << "Creating environment with position: " << fen << std::endl;
 	Environment env = Environment(fen);
-	Game game = Game(400, env);
+	std::cout << "Creating NN" << std::endl;
+	NeuralNetwork nn = NeuralNetwork();
+	std::cout << "Creating white agent" << std::endl;
+	Agent white = Agent("white", &nn);
+	std::cout << "Creating black agent" << std::endl;
+	Agent black = Agent("black", &nn);
+	std::cout << "Creating game" << std::endl;
+	Game game = Game(amount_of_sims, env, white, black);
 	game.getEnvironment()->printBoard();
-	// list moves
-	std::vector<thc::Move> moves;
-	game.getEnvironment()->getLegalMoves(moves);
-	for (thc::Move move : moves){
-		G3LOG(INFO) << move.NaturalOut(game.getEnvironment()->getRules())
-		<< " => " << move.src << "-" << move.dst << " => " << move.TerseOut();
-	}
-
+	game.playMove();
+	// std::cout << "Game over. Result: " << winner << std::endl;
 }
 
 int main(int argc, char** argv) {
@@ -106,11 +109,9 @@ int main(int argc, char** argv) {
 	// utils::test_Train();
 
 	// play chess
-	playContinuously("models/model.pt", amount_of_sims, parallel_games);
+	// playContinuously("models/model.pt", amount_of_sims, parallel_games);
 
-	// playPosition("r2q1b2/pbPkp1pr/2n2p1n/1p3P1p/P2P2P1/8/1PPQ3P/RNBK1BNR b - - 0 13");
-
-	// utils::testBug();
+	playPosition("7k/5ppp/8/8/8/6N1/1PPPPPPP/R3KBBN w - - 0 1", amount_of_sims);
 
 	logger->destroy();
 	logger.reset();

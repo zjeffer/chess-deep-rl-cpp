@@ -185,10 +185,43 @@ torch::Tensor utils::movesToOutputProbs(std::vector<MoveProb> moves){
     return output;
 }
 
+std::vector<float> utils::sampleFromGamma(float alpha, float scale, int size){
+    std::vector<float> samples = std::vector<float>(size, 0.0f);
+    float sum = 0.0f;
+    for (int i = 0; i < size; i++){
+        samples[i] = g_distribution(g_generator);
+        sum += samples[i];
+    }
+    for (int i = 0; i < size; i++){
+        samples[i] /= sum;
+    }
+    return samples;
+}
+
+void utils::addDirichletNoise(Node* root, float alpha) {
+    std::vector<Node*> children = root->getChildren();
+
+    // get the noise
+    std::vector<float> noise = sampleFromGamma(alpha, 1.0f, children.size());
+
+    // get the fraction
+    float frac = 0.25;
+
+    for (int i = 0; i < children.size(); i++) {
+        children[i]->setPrior(children[i]->getPrior() * (1 - frac) + noise[i] * frac);
+    }
+}
+
 bool utils::createDirectory(std::string path){
     return std::filesystem::create_directories(path);
 }
 
+void utils::test_Dirichlet(){
+    G3LOG(INFO) << "Testing Dirichlet...";
+
+    MCTS mcts = MCTS(new Node(), new NeuralNetwork());
+    mcts.run_simulations(400);
+}
 
 void utils::test_MCTS(){
 	Environment env = Environment();

@@ -22,6 +22,8 @@ public:
 
 	std::vector<Node*> getChildren();
 	Node* getChild(std::string fen);
+	Node* getChild(thc::Move action);
+	
 	void add_child(Node* child);
 
 	bool isLeaf();

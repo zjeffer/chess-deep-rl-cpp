@@ -35,13 +35,36 @@ bool Environment::isGameOver() {
 
 void Environment::reset() {
 	if (!this->rules.Forsyth("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")){
-        G3LOG(FATAL) << "Error: Could not reset environment" << std::endl;
+        G3LOG(FATAL) << "Error: Could not reset environment";
         exit(EXIT_FAILURE);
     }
 }
 
+void Environment::printDrawType(thc::DRAWTYPE drawType) {
+    switch (drawType) {
+        case thc::DRAWTYPE::DRAWTYPE_50MOVE:
+            G3LOG(INFO) << "Draw by 50 move rule";
+            break;
+        case thc::DRAWTYPE::DRAWTYPE_INSUFFICIENT:
+            G3LOG(INFO) << "Draw by insufficient material";
+            break;
+        case thc::DRAWTYPE::DRAWTYPE_INSUFFICIENT_AUTO:
+            G3LOG(INFO) << "Draw by insufficient material (auto)";
+            break;
+        case thc::DRAWTYPE::DRAWTYPE_REPITITION:
+            G3LOG(INFO) << "Draw by repetition";
+            break;
+        case thc::DRAWTYPE::NOT_DRAW:
+            G3LOG(INFO) << "Not a draw";
+            break;
+        default:
+            G3LOG(WARNING) << "Unknown draw type";
+            break;
+    }
+}
+
 void Environment::printBoard() {
-    G3LOG(INFO) << "\n" << this->rules.ToDebugStr() << "\n";
+    G3LOG(INFO) << "\n" << this->rules.ToDebugStr();
 }
 
 bool Environment::getCurrentPlayer() {

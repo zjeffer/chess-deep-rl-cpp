@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.23 FATAL_ERROR)
 project(chess-rl VERSION 1.0.0)
 
 ###### OpenCV ######
-find_package( OpenCV REQUIRED )
+find_package(OpenCV REQUIRED)
 message(STATUS "OpenCV library status:")
 message(STATUS "    version: ${OpenCV_VERSION}")
 message(STATUS "    libraries: ${OpenCV_LIBS}")
@@ -42,14 +42,12 @@ file (GLOB SOURCE_FILES
 # create executable
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 # link libraries (opencv, torch, etc)
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} "${TORCH_LIBRARIES}" )
-# link g3log
-target_link_libraries(${PROJECT_NAME} ${G3LOG_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} "${TORCH_LIBRARIES}" ${G3LOG_LIBRARIES})
 
 # fix libgomp error
-add_library(libgomp SHARED IMPORTED)
-set_property(TARGET libgomp PROPERTY IMPORTED_LOCATION "/usr/lib/libgomp.so")
-target_link_libraries(${PROJECT_NAME} libgomp)
+# add_library(libgomp SHARED IMPORTED)
+# set_property(TARGET libgomp PROPERTY IMPORTED_LOCATION "/usr/lib/libgomp.so")
+# target_link_libraries(${PROJECT_NAME} libgomp)
 
 # set c++ standard
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)

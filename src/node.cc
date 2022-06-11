@@ -51,6 +51,16 @@ Node* Node::getChild(std::string fen){
 	}
 	return nullptr;
 }
+
+Node* Node::getChild(thc::Move action) {
+	for (int i = 0; i < (int)this->children.size(); i++) {
+		if (this->children[i]->getAction() == action) {
+			return this->children[i];
+		}
+	}
+	return nullptr;
+}
+
 void Node::add_child(Node* child) {
     this->children.push_back(child);
 }

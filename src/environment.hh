@@ -17,6 +17,8 @@ class Environment {
 
 		bool isGameOver();
 
+		void printDrawType(thc::DRAWTYPE drawType);
+
 		void printBoard();
 
 		thc::TERMINAL terminalState;

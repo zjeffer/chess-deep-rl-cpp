@@ -7,6 +7,7 @@
 #include <torch/csrc/api/include/torch/torch.h>
 #include <torch/torch.h>
 #include <tuple>
+#include <vector>
 
 #include "chess/thc.hh"
 #include "types.hh"
@@ -15,6 +16,7 @@
 #include "mcts.hh"
 #include "game.hh"
 #include "utils.hh"
+#include "common.hh"
 
 namespace utils {
 
@@ -32,7 +34,13 @@ std::map<thc::Move, float> outputProbsToMoves(torch::Tensor &outputProbs, std::v
 
 torch::Tensor movesToOutputProbs(std::vector<MoveProb> moves);
 
+std::vector<float> sampleFromGamma(float alpha, float scale, int size);
+
+void addDirichletNoise(Node* root, float alpha=0.3);
+
 bool createDirectory(std::string path);
+
+void test_Dirichlet();
 
 void test_MCTS();
 

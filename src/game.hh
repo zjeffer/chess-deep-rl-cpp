@@ -19,7 +19,7 @@ class Game {
 	 * @param white 
 	 * @param black 
 	 */
-    Game(int simulations = 400, Environment env = Environment(), Agent white = Agent("white"), Agent black = Agent("black"));
+    Game(int simulations, Environment& env, Agent& white, Agent& black);
 
 	/**
 	 * @brief Play one game. Returns the winner.
@@ -32,7 +32,7 @@ class Game {
 	 * @brief Play one move.
 	 * 
 	 */
-    void play_move();
+    void playMove();
 
 	/**
 	 * @brief Using a uniform random distribution, select the best move

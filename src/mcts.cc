@@ -20,7 +20,12 @@ MCTS::~MCTS() {
 
 
 void MCTS::run_simulations(int num_simulations) {
-	printf("Running %d simulations...\n", num_simulations);
+	G3LOG(INFO) << "Running " << num_simulations << " simulations...";
+
+	// add dirichlet noise to the root node
+	float value = expand(this->root);
+	utils::addDirichletNoise(this->root);
+
 	tqdm bar;
 	for (int i = 0; i < num_simulations && g_running; i++) {
 		bar.progress(i, num_simulations);
@@ -28,11 +33,12 @@ void MCTS::run_simulations(int num_simulations) {
 		Node* leaf = select(this->root);
 
 		// expansion and evaluation
-		float value = expand(leaf);
+		value = expand(leaf);
 
 		// backpropagation
 		backpropagate(leaf, value);
 	}
+	std::cout << std::endl;
 	// printf("Tree depth: %d\n", getTreeDepth(this->root));
 }
 
@@ -53,7 +59,7 @@ Node* MCTS::select(Node* root){
 		Node* best_child = children[rand() % children.size()];
 		float best_score = -1;
 		for (int i = 0; i < (int)children.size(); i++) {
-			// G3LOG(DEBUG) << "Child " << i << ": " << children[i]->getQ() << " + " << children[i]->getUCB() << ". Prior: " << children[i]->getPrior();
+			// G3LOG(DEBUG) << "Child " << children[i]->getAction().TerseOut() << ": " << children[i]->getQ() << " + " << children[i]->getUCB() << ". Prior: " << children[i]->getPrior();
 			Node* child = children[i];
 			float score = child->getPUCTScore();
 			if (score > best_score) {
@@ -62,8 +68,7 @@ Node* MCTS::select(Node* root){
 			}
 		}
 		if (best_child == nullptr) {
-			perror("Error: best_child is null");
-			exit(EXIT_FAILURE);
+			G3LOG(FATAL) << "Error: best_child is null";
 		}
 		current = best_child;
     }
@@ -87,10 +92,34 @@ float MCTS::expand(Node* node){
 	torch::Tensor output_policy = output.slice(1, 0, 4672).view({73, 8, 8});
 	float output_value = output.slice(1, 4672, 4673).item<float>();
 
-
 	// output to moves
 	std::vector<thc::Move> legal_moves;
 	env.getLegalMoves(legal_moves);
+
+	if (legal_moves.size() == 0) {
+		// game is finished in this node, calculate value
+		G3LOG(INFO) << "No legal moves in this node: " << node->getFen();
+		if (env.isGameOver()) {
+			switch(env.terminalState) {
+				case thc::TERMINAL_BCHECKMATE:
+					G3LOG(DEBUG) << "Checkmate, white wins! Node: " << node->getFen();
+					return 1.0;
+				case thc::TERMINAL_WCHECKMATE:
+					G3LOG(DEBUG) << "Checkmate, black wins! Node: " << node->getFen();
+					return -1.0;
+				case thc::TERMINAL_BSTALEMATE:
+				case thc::TERMINAL_WSTALEMATE:
+					G3LOG(DEBUG) << "Game is over by draw in this node: " << node->getFen();
+					return 0.0;
+				default:
+					G3LOG(WARNING) << "Unknown terminal state: " << env.terminalState;
+					exit(EXIT_FAILURE);
+			}
+		} else {
+			G3LOG(WARNING) << "Game is not over but no legal moves in this node: " << node->getFen();
+			exit(EXIT_FAILURE);
+		}
+	}
 	
 	std::map<thc::Move, float> moveProbs = utils::outputProbsToMoves(output_policy, legal_moves);
 
