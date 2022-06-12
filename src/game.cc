@@ -66,9 +66,10 @@ int Game::playGame(bool stochastic) {
 		}
 	}
 
-	this->updateMemory(winner);
-
-	this->memoryToFile();
+	if (winner != 0){
+		this->updateMemory(winner);
+		this->memoryToFile();
+	}
 
 	this->reset();
 
