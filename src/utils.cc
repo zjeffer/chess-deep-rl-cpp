@@ -306,7 +306,9 @@ void utils::test_Train(){
 	
 	// data loader
 	G3LOG(DEBUG) << "Creating data loader";
-	auto data_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(std::move(train_set), batch_size);
+	// auto data_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(std::move(train_set), batch_size);
+	auto data_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(std::move(train_set), batch_size);
+
 	G3LOG(DEBUG) << "Data loader created";
 
 

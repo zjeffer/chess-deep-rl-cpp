@@ -31,7 +31,9 @@ using ChessDataLoader = torch::data::StatelessDataLoader<
 			>
 		>
 	>, 
-	torch::data::samplers::RandomSampler
+	// torch::data::samplers::RandomSampler
+	torch::data::samplers::SequentialSampler
+
 >;
 
 class NeuralNetwork : public torch::nn::Module {
