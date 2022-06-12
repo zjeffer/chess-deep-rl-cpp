@@ -106,12 +106,12 @@ int main(int argc, char** argv) {
 	// utils::test_NN("models/model.pt");
 
 	// try training
-	// utils::test_Train();
+	utils::test_Train();
 
 	// play chess
 	// playContinuously("models/model.pt", amount_of_sims, parallel_games);
 
-	playPosition("7k/5ppp/8/8/8/6N1/1PPPPPPP/R3KBBN w - - 0 1", amount_of_sims);
+	// playPosition("7k/5ppp/8/8/8/6N1/1PPPPPPP/R3KBBN w - - 0 1", amount_of_sims);
 
 	logger->destroy();
 	logger.reset();
