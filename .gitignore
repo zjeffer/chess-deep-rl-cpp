@@ -1,6 +1,8 @@
 old/
 neural-net/
 .cache/
-build
+build/
+vendor/g3log/build/
 memory/game-*
 models/*.pt
+lib/
