@@ -1,4 +1,4 @@
-FROM arch-cuda:latest
+FROM ghcr.io/zjeffer/docker-arch-cuda:latest
 
 WORKDIR /app
 

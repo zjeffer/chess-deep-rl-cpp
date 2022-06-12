@@ -4,3 +4,4 @@ neural-net/
 build/
 vendor/g3log/build/
 lib/
+memory/
