@@ -296,7 +296,7 @@ void utils::test_NN(std::string networkPath){
 }
 
 void utils::test_Train(){
-	NeuralNetwork nn = NeuralNetwork("models/model copy.pt");
+	NeuralNetwork nn = NeuralNetwork("models/model.pt");
 
 	ChessDataSet chessDataSet = ChessDataSet("memory");
 	
