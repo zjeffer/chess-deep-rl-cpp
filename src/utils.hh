@@ -46,9 +46,13 @@ void test_MCTS();
 
 void test_NN(std::string networkPath);
 
-void test_Train();
+void test_Train(std::string networkPath);
 
 void testBug();
+
+void viewTensorFromFile(std::string filename);
+
+std::string getTimeString();
 
 } // namespace utils
 

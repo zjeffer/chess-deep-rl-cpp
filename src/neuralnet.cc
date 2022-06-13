@@ -18,6 +18,8 @@
 
 #include <filesystem>
 
+#include "utils.hh"
+
 #define CONV_FILTERS 256
 #define PLANE_SIZE 8
 #define OUTPUT_PLANES 73
@@ -34,21 +36,21 @@ void NeuralNetwork::buildNetwork() {
     lin2 = torch::nn::Linear(VALUE_FILTERS * 8 * 8, 256);
     lin3 = torch::nn::Linear(256, 1);
 
-    torch::nn::init::xavier_uniform_(input_conv->weight);
-    torch::nn::init::xavier_uniform_(residual_conv->weight);
-    torch::nn::init::xavier_uniform_(policy_conv->weight);
-    torch::nn::init::xavier_uniform_(policy_output->weight);
-    torch::nn::init::xavier_uniform_(value_conv->weight);
-    torch::nn::init::xavier_uniform_(lin2->weight);
-    torch::nn::init::xavier_uniform_(lin3->weight);
+    input_conv->weight = torch::nn::init::xavier_uniform_(input_conv->weight);
+    residual_conv->weight = torch::nn::init::xavier_uniform_(residual_conv->weight);
+    policy_conv->weight = torch::nn::init::xavier_uniform_(policy_conv->weight);
+    policy_output->weight = torch::nn::init::xavier_uniform_(policy_output->weight);
+    value_conv->weight = torch::nn::init::xavier_uniform_(value_conv->weight);
+    lin2->weight = torch::nn::init::xavier_uniform_(lin2->weight);
+    lin3->weight = torch::nn::init::xavier_uniform_(lin3->weight);
 
-    torch::nn::init::constant_(input_conv->bias, 0);
-    torch::nn::init::constant_(residual_conv->bias, 0);
-    torch::nn::init::constant_(policy_conv->bias, 0);
-    torch::nn::init::constant_(policy_output->bias, 0);
-    torch::nn::init::constant_(value_conv->bias, 0);
-    torch::nn::init::constant_(lin2->bias, 0);
-    torch::nn::init::constant_(lin3->bias, 0);
+    input_conv->bias = torch::nn::init::constant_(input_conv->bias, 0);
+    residual_conv->bias = torch::nn::init::constant_(residual_conv->bias, 0);
+    policy_conv->bias = torch::nn::init::constant_(policy_conv->bias, 0);
+    policy_output->bias = torch::nn::init::constant_(policy_output->bias, 0);
+    value_conv->bias = torch::nn::init::constant_(value_conv->bias, 0);
+    lin2->bias = torch::nn::init::constant_(lin2->bias, 0);
+    lin3->bias = torch::nn::init::constant_(lin3->bias, 0);
 
     // main input
     input_conv = register_module("input_conv", input_conv);
@@ -138,6 +140,12 @@ bool NeuralNetwork::loadModel(std::string path) {
 
 bool NeuralNetwork::saveModel(std::string path){
     try {
+        if (path.size() == 0) {
+            path = "./models/model_" + utils::getTimeString() + ".pt";
+        }
+        if (std::filesystem::exists(path)) {
+            std::filesystem::remove(path);
+        }
         // save model to path
         G3LOG(INFO) << "Saving model to: " << path;
         torch::serialize::OutputArchive oa;
@@ -206,11 +214,24 @@ void NeuralNetwork::train(ChessDataLoader &loader, torch::optim::Optimizer &opti
 		G3LOG(INFO) << "Batch of size " << size;
 		auto data = batch.data.to(torch::kCUDA);
 		auto target = batch.target.to(torch::kCUDA);
+
+        // check if policy_target contains nans
+        if (!torch::nan_to_num(target).equal(target)){
+            G3LOG(WARNING) << target;
+            G3LOG(WARNING) << "Target contains nans";
+            exit(EXIT_FAILURE);
+        }
+
 		// divide policy and value targets
 		auto policy_target = target.slice(1, 0, 4672).view({size, 73, 8, 8});
 		auto value_target = target.slice(1, 4672, 4673).view({size, 1});
 
 		auto output = this->forward(data);
+        if (!torch::nan_to_num(output).equal(output)){
+            G3LOG(WARNING) << output;
+            G3LOG(WARNING) << "Policy output contains nans";
+            exit(EXIT_FAILURE);
+        }
 		auto policy_output = output.slice(1, 0, 4672).view({size, 73, 8, 8});
 		auto value_output = output.slice(1, 4672, 4673).view({size, 1});
 

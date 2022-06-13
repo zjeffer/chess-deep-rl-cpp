@@ -24,7 +24,10 @@ void MCTS::run_simulations(int num_simulations) {
 
 	// add dirichlet noise to the root node
 	float value = expand(this->root);
-	utils::addDirichletNoise(this->root);
+	// utils::addDirichletNoise(this->root);
+	for(Node *node : this->root->getChildren()) {
+		node->setPrior(0.1);
+	}
 
 	tqdm bar;
 	for (int i = 0; i < num_simulations && g_running; i++) {
@@ -58,8 +61,10 @@ Node* MCTS::select(Node* root){
 		}
 		Node* best_child = children[rand() % children.size()];
 		float best_score = -1;
+		G3LOG(INFO) << current->getFen();
+		G3LOG(INFO) << "# Children: " << children.size();
 		for (int i = 0; i < (int)children.size(); i++) {
-			// G3LOG(DEBUG) << "Child " << children[i]->getAction().TerseOut() << ": " << children[i]->getQ() << " + " << children[i]->getUCB() << ". Prior: " << children[i]->getPrior();
+			G3LOG(DEBUG) << "Child " << children[i]->getAction().TerseOut() << ": " << children[i]->getQ() << " + " << children[i]->getUCB() << ". Prior: " << children[i]->getPrior();
 			Node* child = children[i];
 			float score = child->getPUCTScore();
 			if (score > best_score) {
@@ -69,8 +74,10 @@ Node* MCTS::select(Node* root){
 		}
 		if (best_child == nullptr) {
 			G3LOG(FATAL) << "Error: best_child is null";
+			exit(EXIT_FAILURE);
 		}
 		current = best_child;
+		G3LOG(WARNING) << "Selected child " << current->getAction().TerseOut() << " with score: " << best_score;
     }
 	auto stop = std::chrono::high_resolution_clock::now();
 	// G3LOG(DEBUG << "Selection: " << std::chrono::duration_cast<std::chrono::microseconds>(stop - start_time).count() << " microseconds for " << traversals << " traversals";
@@ -148,7 +155,11 @@ void MCTS::backpropagate(Node* node, float value){
 	while (node != nullptr) {
 		// printf("Backpropagating...\n");
 		node->incrementVisit();
-		node->setValue(value);
+		if (node->getPlayer()) {
+			node->setValue(value);
+		} else {
+			node->setValue(1-value);
+		}
 		node = node->getParent();
 	}
 }

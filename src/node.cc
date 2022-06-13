@@ -96,11 +96,7 @@ void Node::setPrior(float prior) {
 }
 
 float Node::getPUCTScore(){
-	if (this->getPlayer()){
-		return this->getValue() + this->getUCB();
-	} else {
-		return (-this->getValue()) + this->getUCB();
-	}
+	return this->getQ() + this->getUCB();
 }
 
 float Node::getQ(){
@@ -110,10 +106,11 @@ float Node::getQ(){
 float Node::getUCB(){
 	if (this->parent == nullptr){
 		G3LOG(WARNING) << "parent is null";
-		return 0.0;
+		exit(EXIT_FAILURE);
 	}
-	float exploration_rate = log((1 + this->parent->visit_count + 20000) / 20000) + 2;
-	return exploration_rate * this->prior * (sqrt(this->parent->visit_count) / (this->visit_count + 1));
+	float exploration_rate = log((this->parent->getVisitCount() + 19652 + 1) / 19652) + 1.25;
+	exploration_rate *= sqrt(this->parent->getVisitCount()) / (this->visit_count + 1);
+	return exploration_rate * this->getPrior();
 }
 
 bool Node::getPlayer(){

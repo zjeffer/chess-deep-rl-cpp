@@ -30,6 +30,7 @@ class Environment {
 		int getAmountOfPieces();
 
 		std::string makeMove(thc::Move move);
+		std::string pushMove(thc::Move move);
 		std::string undoMove(thc::Move move);
 
 		thc::ChessRules* getRules();

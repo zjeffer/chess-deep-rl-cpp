@@ -89,8 +89,6 @@ cv::Mat utils::tensorToMat(torch::Tensor tensor, int rows, int cols) {
         cv::Size{rows, cols},
         CV_32FC1,
         reshaped.data_ptr<float>());
-    G3LOG(DEBUG) << "Printing mat: ";
-    G3LOG(DEBUG) << mat;
     // without .clone() it will create some weird errors
     return mat.clone();
 }
@@ -207,8 +205,17 @@ void utils::addDirichletNoise(Node* root, float alpha) {
     // get the fraction
     float frac = 0.25;
 
+    for(int i = 0; i < children.size(); i++){
+        G3LOG(WARNING) << children[i]->getAction().TerseOut() << " => " << children[i]->getPrior();
+    }
+
     for (int i = 0; i < children.size(); i++) {
         children[i]->setPrior(children[i]->getPrior() * (1 - frac) + noise[i] * frac);
+    }
+
+    G3LOG(INFO) << "After adding dirichlet noise:";
+    for(int i = 0; i < children.size(); i++){
+        G3LOG(WARNING) << children[i]->getAction().TerseOut() << " => " << children[i]->getPrior();
     }
 }
 
@@ -244,59 +251,70 @@ void utils::test_MCTS(){
 }
 
 void utils::test_NN(std::string networkPath){
-	NeuralNetwork nn = NeuralNetwork(networkPath, false);
+	NeuralNetwork nn = NeuralNetwork(networkPath);
 
-	Environment board = Environment();
-	std::vector<std::string> moveList = {
-		"e2e4", 
-		"e7e5",
-		"g1f3",
-		"b8c6",
-		"f1c4",
-		"f8c5",
-		"e1g1"
-	};
+	// Environment board = Environment();
+	// std::vector<std::string> moveList = {
+	// 	"e2e4", 
+	// 	"e7e5",
+	// 	"g1f3",
+	// 	"b8c6",
+	// 	"f1c4",
+	// 	"f8c5",
+	// 	"e1g1"
+	// };
 
-	// play the moves
-	for (std::string moveString : moveList){
-		thc::Move move;
-		if (move.TerseIn(board.getRules(), moveString.c_str())){
-			board.makeMove(move);
-		} else {
-			G3LOG(FATAL) << "Invalid move: " << moveString;
-			exit(EXIT_FAILURE);
-		}
-	}
+	// // play the moves
+	// for (std::string moveString : moveList){
+	// 	thc::Move move;
+	// 	if (move.TerseIn(board.getRules(), moveString.c_str())){
+	// 		board.makeMove(move);
+	// 	} else {
+	// 		G3LOG(FATAL) << "Invalid move: " << moveString;
+	// 		exit(EXIT_FAILURE);
+	// 	}
+	// }
+
+    Environment board = Environment("7k/5ppp/8/8/8/6N1/1PPPPPPP/R3KBBN w - - 0 1");
 
 	// test board to input
 	G3LOG(DEBUG) << "Converting board to input state";
 	torch::Tensor input = board.boardToInput();
 
-	// tensor to image
-	G3LOG(DEBUG) << "Converting input to image";
-	cv::Mat mat = utils::tensorToMat(input.clone(), 119*8, 8);
-	utils::saveCvMatToImg(mat, "tests/input.png", 128);
+	// save input to image
+	// G3LOG(DEBUG) << "Converting input to image";
+	// cv::Mat mat = utils::tensorToMat(input.clone(), 119*8, 8);
+	// utils::saveCvMatToImg(mat, "tests/input.png", 128);
 
 	torch::Tensor output = torch::zeros({4673});
 
 	// predict
 	nn.predict(input, output);
+    if (!output.nan_to_num().equal(output)){
+        G3LOG(WARNING) << output;
+        G3LOG(WARNING) << "Output is NaN";
+        exit(EXIT_FAILURE);
+    }
 
 	G3LOG(DEBUG) << "predicted";
 
 	// value is the last element of the output tensor
-	torch::Tensor value = output.slice(1, 4672, 4673);
-	G3LOG(DEBUG) << "value: " << value;
 	torch::Tensor policy = output.slice(1, 0, 4672).view({73, 8, 8});
 	G3LOG(DEBUG) << "policy: " << policy.sizes();
-	// reshape to 73x8x8
+	torch::Tensor value = output.slice(1, 4672, 4673);
+	G3LOG(DEBUG) << "value: " << value;
+
+
+
+	// save output to img
+    G3LOG(DEBUG) << "Converting output to image";
 	cv::Mat img = utils::tensorToMat(policy.clone(), 73*8, 8);
 	G3LOG(DEBUG) << "image: " << img.size();
 	utils::saveCvMatToImg(img, "tests/output.png", 255);
 }
 
-void utils::test_Train(){
-	NeuralNetwork nn = NeuralNetwork("models/model.pt");
+void utils::test_Train(std::string networkPath){
+	NeuralNetwork nn = NeuralNetwork(networkPath);
 
 	ChessDataSet chessDataSet = ChessDataSet("memory");
 	
@@ -332,4 +350,23 @@ void utils::testBug(){
     }
     env.makeMove(move);
     env.printBoard();
+}
+
+std::string utils::getTimeString() {
+    time_t rawtime;
+    struct tm * timeinfo;
+    char buffer[80];
+
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    strftime(buffer, 80, "%Y-%m-%d_%H-%M-%S", timeinfo);
+    return std::string(buffer);
+}
+
+void utils::viewTensorFromFile(std::string filename) {
+    torch::Tensor tensor;
+    torch::load(tensor, filename);
+    G3LOG(INFO) << "Tensor: " << tensor;
+    G3LOG(INFO) << "Tensor size: " << tensor.sizes();
 }

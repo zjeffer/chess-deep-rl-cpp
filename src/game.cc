@@ -66,10 +66,13 @@ int Game::playGame(bool stochastic) {
 		}
 	}
 
-	if (winner != 0){
-		this->updateMemory(winner);
-		this->memoryToFile();
-	}
+	// only save wins
+	// if (winner != 0){
+	// 	this->updateMemory(winner);
+	// 	this->memoryToFile();
+	// }
+	this->updateMemory(winner);
+	this->memoryToFile();
 
 	this->reset();
 
@@ -104,12 +107,12 @@ void Game::playMove(){
 	}
 
 	// print moves
-	// G3LOG(DEBUG) << "Moves: "";
-	// for (int i = 0; i < childNodes.size(); i++) {
-	// 	thc::Move move = childNodes[i]->getAction();
-	// 	std::cout << "Move " << i << ": " << move.NaturalOut(this->env.getRules());
-	// 	std::cout << " " << childNodes[i]->getVisitCount() << " visits" << std::endl;
-	// }
+	G3LOG(DEBUG) << "Moves: ";
+	for (int i = 0; i < childNodes.size(); i++) {
+		thc::Move move = childNodes[i]->getAction();
+		std::cout << "Move " << i << ": " << move.NaturalOut(this->env.getRules());
+		std::cout << " " << childNodes[i]->getVisitCount() << " visits" << std::endl;
+	}
 
 
 	thc::Move bestMove;
@@ -194,7 +197,7 @@ void Game::memoryElementToTensors(MemoryElement *memory_element, torch::Tensor& 
 	input_tensor = env.boardToInput().flatten(0, 1);
 	
 	// convert the probs to the policy output
-	torch::Tensor policy_output = torch::full({73, 8, 8}, (float)0.0);
+	torch::Tensor policy_output = torch::full({73, 8, 8}, 0.0);
 	thc::ChessRules* rules = new thc::ChessRules();
 	rules->Forsyth(memory_element->state.c_str());
 	for (MoveProb moveProb : memory_element->probs){

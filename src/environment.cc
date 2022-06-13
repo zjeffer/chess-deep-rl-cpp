@@ -101,6 +101,11 @@ std::string Environment::makeMove(thc::Move move) {
     return this->getFen();
 }
 
+std::string Environment::pushMove(thc::Move move) {
+    this->rules.PushMove(move);
+    return this->getFen();
+}
+
 std::string Environment::undoMove(thc::Move move) {
     this->rules.PopMove(move);
     return this->getFen();
