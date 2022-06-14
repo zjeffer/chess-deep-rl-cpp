@@ -6,7 +6,6 @@
 	},
 
 	"extensions": [
-		"twxs.cmake",
 		"ms-vscode.cpptools-themes",
 		"ms-vscode.cpptools",
 		"cschlosser.doxdocgen",
