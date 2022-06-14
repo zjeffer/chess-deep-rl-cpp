@@ -3,7 +3,7 @@ FROM ghcr.io/zjeffer/docker-arch-cuda:latest
 WORKDIR /app
 
 # compilers, opencv, nvidia 
-RUN pacman -Sy --noconfirm cmake make gcc opencv git vtk hdf5 glew openmpi fmt sudo qt5-base
+RUN pacman -Sy --noconfirm cmake make gcc opencv git vtk hdf5 glew openmpi fmt sudo qt5-base ninja
 
 # add user
 ################# USER & GROUP CREATION #################
