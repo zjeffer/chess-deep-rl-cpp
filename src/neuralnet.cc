@@ -44,13 +44,13 @@ void NeuralNetwork::buildNetwork() {
     lin2->weight = torch::nn::init::xavier_uniform_(lin2->weight);
     lin3->weight = torch::nn::init::xavier_uniform_(lin3->weight);
 
-    input_conv->bias = torch::nn::init::constant_(input_conv->bias, 0);
-    residual_conv->bias = torch::nn::init::constant_(residual_conv->bias, 0);
-    policy_conv->bias = torch::nn::init::constant_(policy_conv->bias, 0);
-    policy_output->bias = torch::nn::init::constant_(policy_output->bias, 0);
-    value_conv->bias = torch::nn::init::constant_(value_conv->bias, 0);
-    lin2->bias = torch::nn::init::constant_(lin2->bias, 0);
-    lin3->bias = torch::nn::init::constant_(lin3->bias, 0);
+    // input_conv->bias = torch::nn::init::constant_(input_conv->bias, 0);
+    // residual_conv->bias = torch::nn::init::constant_(residual_conv->bias, 0);
+    // policy_conv->bias = torch::nn::init::constant_(policy_conv->bias, 0);
+    // policy_output->bias = torch::nn::init::constant_(policy_output->bias, 0);
+    // value_conv->bias = torch::nn::init::constant_(value_conv->bias, 0);
+    // lin2->bias = torch::nn::init::constant_(lin2->bias, 0);
+    // lin3->bias = torch::nn::init::constant_(lin3->bias, 0);
 
     // main input
     input_conv = register_module("input_conv", input_conv);
@@ -67,7 +67,7 @@ void NeuralNetwork::buildNetwork() {
     lin2 = register_module("value_lin", lin2);
     lin3 = register_module("value_output", lin3);
 
-    // all layers to device
+    // all layers to device (is this necessary?)
     input_conv->to(device);
     residual_conv->to(device);
     policy_conv->to(device);
@@ -90,7 +90,8 @@ void NeuralNetwork::build_policy_head() {
         torch::nn::ReLU(),
         torch::nn::Flatten(),
         policy_output,
-        torch::nn::ReLU());
+        torch::nn::Softmax(1)
+    );
     this->policy_head->to(device);
 }
 
@@ -127,49 +128,53 @@ torch::Tensor NeuralNetwork::forward(torch::Tensor x) {
 bool NeuralNetwork::loadModel(std::string path) {
     try {
         // load model from path
-        G3LOG(INFO) << "Loading model from: " << path;
+        LOG(INFO) << "Loading model from: " << path;
         torch::serialize::InputArchive ia;
         ia.load_from(path);
         this->load(ia);
     } catch (const std::exception& e) {
-        G3LOG(WARNING) << "Error loading model: " << e.what();
+        LOG(WARNING) << "Error loading model: " << e.what();
         return false;
     }
     return true;
 }
 
-bool NeuralNetwork::saveModel(std::string path){
+bool NeuralNetwork::saveModel(std::string path, bool isTrained){
     try {
         if (path.size() == 0) {
             path = "./models/model_" + utils::getTimeString() + ".pt";
         }
         if (std::filesystem::exists(path)) {
+            LOG(WARNING) << "Model already exists at: " << path << ". Overwriting...";
             std::filesystem::remove(path);
         }
+        if (isTrained) {
+            path.append("_trained");
+        }
         // save model to path
-        G3LOG(INFO) << "Saving model to: " << path;
+        LOG(INFO) << "Saving model to: " << path;
         torch::serialize::OutputArchive oa;
         this->save(oa);
         oa.save_to(path);
     } catch (const std::exception& e) {
-        G3LOG(WARNING) << "Error saving model: " << e.what();
+        LOG(WARNING) << "Error saving model: " << e.what();
         return false;
     }
     return true;
 }
 
 NeuralNetwork::NeuralNetwork(std::string path, bool useCPU) : torch::nn::Module() {
-    G3LOG(DEBUG) << "Creating NeuralNetwork object...";
+    LOG(DEBUG) << "Creating NeuralNetwork object...";
 
     if (useCPU) {
-        G3LOG(DEBUG) << "Running on CPU.";
+        LOG(DEBUG) << "Running on CPU.";
         this->device = torch::Device(torch::kCPU);
     } else {
         if (torch::cuda::is_available() ) {
-            G3LOG(DEBUG) << "CUDA loaded. Device count: " << torch::cuda::device_count();
+            LOG(DEBUG) << "CUDA loaded. Device count: " << torch::cuda::device_count();
             this->device = torch::Device(torch::kCUDA);
         } else {
-            G3LOG(WARNING) << "CUDA not available. Running on CPU.";
+            LOG(WARNING) << "CUDA not available. Running on CPU.";
             this->device = torch::Device(torch::kCPU);
         }
     }
@@ -181,44 +186,53 @@ NeuralNetwork::NeuralNetwork(std::string path, bool useCPU) : torch::nn::Module(
         if (std::filesystem::is_regular_file(path)){
             this->loadModel(path);
         } else {
-            G3LOG(WARNING) << "Model file does not exist. Creating new model.";
+            LOG(WARNING) << "Model file does not exist. Creating new model.";
             if(!this->saveModel(path)){
                 exit(EXIT_FAILURE);
             }
         }
+    } else {
+        LOG(WARNING) << "No model path given. Creating new model.";
+        if(!this->saveModel("")){
+            exit(EXIT_FAILURE);
+        }
     }
 
     // random input
-    G3LOG(DEBUG) << "Testing random input...";
+    LOG(DEBUG) << "Testing random input...";
     torch::Tensor input = torch::rand({1, 119, 8, 8});
     torch::Tensor output;
     this->predict(input, output);
     if (output.dim() != 2){
-        G3LOG(FATAL) << "Failed to test model with random input";
+        LOG(FATAL) << "Failed to test model with random input";
         exit(EXIT_FAILURE);
     }
-    G3LOG(DEBUG) << "Output successful";
+    LOG(DEBUG) << "Output successful";
 }
 
 void NeuralNetwork::predict(torch::Tensor &input, torch::Tensor &output) {
     output = this->forward(input);
 }
 
-void NeuralNetwork::train(ChessDataLoader &loader, torch::optim::Optimizer &optimizer, int data_size, int batch_size) {
+void NeuralNetwork::trainBatches(ChessDataLoader &loader, torch::optim::Optimizer &optimizer, int data_size, int batch_size) {
     float Loss = 0, Acc = 0;
 
-	G3LOG(INFO) << "Starting training with " << data_size << " examples";
+    // enable training mode
+    this->train();
+    this->to(this->device);
+
+	LOG(INFO) << "Starting training with " << data_size << " examples";
 	int index = 0;
 	for (auto batch : loader) {
 		int size = batch.data.sizes()[0];
-		G3LOG(INFO) << "Batch of size " << size;
+		LOG(INFO) << "Batch of size " << size;
 		auto data = batch.data.to(torch::kCUDA);
 		auto target = batch.target.to(torch::kCUDA);
 
         // check if policy_target contains nans
         if (!torch::nan_to_num(target).equal(target)){
-            G3LOG(WARNING) << target;
-            G3LOG(WARNING) << "Target contains nans";
+            LOG(WARNING) << target;
+            LOG(WARNING) << "Target contains nans";
             exit(EXIT_FAILURE);
         }
 
@@ -228,8 +242,8 @@ void NeuralNetwork::train(ChessDataLoader &loader, torch::optim::Optimizer &opti
 
 		auto output = this->forward(data);
         if (!torch::nan_to_num(output).equal(output)){
-            G3LOG(WARNING) << output;
-            G3LOG(WARNING) << "Policy output contains nans";
+            LOG(WARNING) << output;
+            LOG(WARNING) << "Policy output contains nans";
             exit(EXIT_FAILURE);
         }
 		auto policy_output = output.slice(1, 0, 4672).view({size, 73, 8, 8});
@@ -240,8 +254,8 @@ void NeuralNetwork::train(ChessDataLoader &loader, torch::optim::Optimizer &opti
 		auto policy_loss = -torch::sum(policy_target * torch::clamp(torch::log(policy_output), -10e1, 10e1));
 		auto value_loss = torch::mse_loss(value_output, value_target);
 		
-		G3LOG(INFO) << "Policy loss: " << policy_loss;
-		G3LOG(INFO) << "Value loss: " << value_loss;
+		LOG(INFO) << "Policy loss: " << policy_loss;
+		LOG(INFO) << "Value loss: " << value_loss;
 		auto loss = torch::add(policy_loss, value_loss);
 
 		optimizer.zero_grad();
@@ -252,11 +266,11 @@ void NeuralNetwork::train(ChessDataLoader &loader, torch::optim::Optimizer &opti
 
 		// calculate average loss
 		auto end = std::min(data_size, (index + 1) * batch_size);
-		G3LOG(INFO) << "===================== Epoch: " << index << " => Loss: " << Loss / (end);
+		LOG(INFO) << "===================== Epoch: " << index << " => Loss: " << Loss / (end);
 		index += 1;
 	}
-	G3LOG(INFO) << "Training finished";
+	LOG(INFO) << "Training finished";
 
     // TODO: add timestamp
-    this->saveModel("models/model.pt");
+    this->saveModel("", true);
 }

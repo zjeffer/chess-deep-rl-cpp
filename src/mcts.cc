@@ -2,12 +2,11 @@
 #include <chrono>
 #include <iostream>
 
-#include "common.hh"
 #include "chess/thc.hh"
 #include "mcts.hh"
 #include "tqdm.h"
 #include "utils.hh"
-
+#include "common.hh"
 
 MCTS::MCTS(Node* root, NeuralNetwork* nn) {
 	this->root = root;
@@ -20,14 +19,11 @@ MCTS::~MCTS() {
 
 
 void MCTS::run_simulations(int num_simulations) {
-	G3LOG(INFO) << "Running " << num_simulations << " simulations...";
+	LOG(INFO) << "Running " << num_simulations << " simulations...";
 
 	// add dirichlet noise to the root node
 	float value = expand(this->root);
-	// utils::addDirichletNoise(this->root);
-	for(Node *node : this->root->getChildren()) {
-		node->setPrior(0.1);
-	}
+	utils::addDirichletNoise(this->root);
 
 	tqdm bar;
 	for (int i = 0; i < num_simulations && g_running; i++) {
@@ -42,7 +38,7 @@ void MCTS::run_simulations(int num_simulations) {
 		backpropagate(leaf, value);
 	}
 	std::cout << std::endl;
-	// printf("Tree depth: %d\n", getTreeDepth(this->root));
+	// LOG(DEBUG) << "Tree depth: " << getTreeDepth(this->root);
 }
 
 Node* MCTS::select(Node* root){
@@ -56,15 +52,15 @@ Node* MCTS::select(Node* root){
 		std::vector<Node*> children = current->getChildren();
 		// start with random child as best child
 		if (children.size() == 0) {
-			perror("No children");
+			LOG(WARNING) << "No children found for node " << current->getFen();
 			exit(EXIT_FAILURE);
 		}
 		Node* best_child = children[rand() % children.size()];
 		float best_score = -1;
-		G3LOG(INFO) << current->getFen();
-		G3LOG(INFO) << "# Children: " << children.size();
+		// LOG(INFO) << current->getFen();
+		// LOG(INFO) << "# Children: " << children.size();
 		for (int i = 0; i < (int)children.size(); i++) {
-			G3LOG(DEBUG) << "Child " << children[i]->getAction().TerseOut() << ": " << children[i]->getQ() << " + " << children[i]->getUCB() << ". Prior: " << children[i]->getPrior();
+			// LOG(DEBUG) << "Child " << children[i]->getAction().TerseOut() << ": " << children[i]->getQ() << " + " << children[i]->getUCB() << ". Prior: " << children[i]->getPrior();
 			Node* child = children[i];
 			float score = child->getPUCTScore();
 			if (score > best_score) {
@@ -73,14 +69,14 @@ Node* MCTS::select(Node* root){
 			}
 		}
 		if (best_child == nullptr) {
-			G3LOG(FATAL) << "Error: best_child is null";
+			LOG(FATAL) << "Error: best_child is null";
 			exit(EXIT_FAILURE);
 		}
 		current = best_child;
-		G3LOG(WARNING) << "Selected child " << current->getAction().TerseOut() << " with score: " << best_score;
+		// LOG(DEBUG) << "Selected child " << current->getAction().TerseOut() << " with score: " << best_score;
     }
 	auto stop = std::chrono::high_resolution_clock::now();
-	// G3LOG(DEBUG << "Selection: " << std::chrono::duration_cast<std::chrono::microseconds>(stop - start_time).count() << " microseconds for " << traversals << " traversals";
+	// LOG(DEBUG << "Selection: " << std::chrono::duration_cast<std::chrono::microseconds>(stop - start_time).count() << " microseconds for " << traversals << " traversals";
 
 	return current;
 }
@@ -103,30 +99,28 @@ float MCTS::expand(Node* node){
 	std::vector<thc::Move> legal_moves;
 	env.getLegalMoves(legal_moves);
 
-	if (legal_moves.size() == 0) {
+	// TODO: this might not work properly
+	/* if (legal_moves.size() == 0) {
 		// game is finished in this node, calculate value
-		G3LOG(INFO) << "No legal moves in this node: " << node->getFen();
+		// LOG(INFO) << "No legal moves in this node: " << node->getFen();
 		if (env.isGameOver()) {
 			switch(env.terminalState) {
 				case thc::TERMINAL_BCHECKMATE:
-					G3LOG(DEBUG) << "Checkmate, white wins! Node: " << node->getFen();
-					return 1.0;
 				case thc::TERMINAL_WCHECKMATE:
-					G3LOG(DEBUG) << "Checkmate, black wins! Node: " << node->getFen();
-					return -1.0;
+					return 1.0;
 				case thc::TERMINAL_BSTALEMATE:
 				case thc::TERMINAL_WSTALEMATE:
-					G3LOG(DEBUG) << "Game is over by draw in this node: " << node->getFen();
+					// LOG(DEBUG) << "Game is over by draw in this node: " << node->getFen();
 					return 0.0;
 				default:
-					G3LOG(WARNING) << "Unknown terminal state: " << env.terminalState;
+					LOG(WARNING) << "Unknown terminal state: " << env.terminalState;
 					exit(EXIT_FAILURE);
 			}
 		} else {
-			G3LOG(WARNING) << "Game is not over but no legal moves in this node: " << node->getFen();
+			LOG(WARNING) << "Game is not over but no legal moves in this node: " << node->getFen();
 			exit(EXIT_FAILURE);
 		}
-	}
+	} */
 	
 	std::map<thc::Move, float> moveProbs = utils::outputProbsToMoves(output_policy, legal_moves);
 
@@ -153,12 +147,11 @@ float MCTS::expand(Node* node){
 
 void MCTS::backpropagate(Node* node, float value){
 	while (node != nullptr) {
-		// printf("Backpropagating...\n");
 		node->incrementVisit();
 		if (node->getPlayer()) {
-			node->setValue(value);
+			node->setValue(node->getValue() + value);
 		} else {
-			node->setValue(1-value);
+			node->setValue(node->getValue() + 1 - value);
 		}
 		node = node->getParent();
 	}

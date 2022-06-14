@@ -57,7 +57,7 @@ void utils::addboardToPlanes(torch::Tensor *planes, int start_index, thc::ChessR
                 break;
             }
             default: {
-                G3LOG(FATAL) << "Error: Invalid piece type: " << board->squares[i * 8 + j] << " at " << i << "," << j << "\n"
+                LOG(FATAL) << "Error: Invalid piece type: " << board->squares[i * 8 + j] << " at " << i << "," << j << "\n"
                 << board->ToDebugStr();
                 exit(EXIT_FAILURE);
             }
@@ -81,7 +81,7 @@ cv::Mat utils::tensorToMat(torch::Tensor tensor, int rows, int cols) {
     }
     // reshape tensor from 3d tensor to 2d rectangle
     torch::Tensor reshaped = torch::stack(torch::unbind(tensor, 2), 1).flatten(0, 1);
-    G3LOG(DEBUG) << "Reshaped tensor from " << tensor.sizes() << " to " << reshaped.sizes();
+    LOG(DEBUG) << "Reshaped tensor from " << tensor.sizes() << " to " << reshaped.sizes();
 
     // send to cpu, otherwise it segfaults
     reshaped = reshaped.to(torch::kCPU);
@@ -96,12 +96,12 @@ cv::Mat utils::tensorToMat(torch::Tensor tensor, int rows, int cols) {
 void utils::saveCvMatToImg(const cv::Mat mat, const std::string &filename, int multiplier) {
     // multiply every pixel by a multiplier
     // this is because CV expects values from 0-255
-    G3LOG(DEBUG) << "Converting mat...";
+    LOG(DEBUG) << "Converting mat...";
     mat.convertTo(mat, CV_32FC1, multiplier);
     if (cv::imwrite(filename, mat)) {
-        G3LOG(DEBUG) << "Saved image to: " << filename;
+        LOG(DEBUG) << "Saved image to: " << filename;
     } else {
-        G3LOG(WARNING) << "Error: Could not save image to: " << filename;
+        LOG(WARNING) << "Error: Could not save image to: " << filename;
     }
 }
 
@@ -202,21 +202,13 @@ void utils::addDirichletNoise(Node* root, float alpha) {
     // get the noise
     std::vector<float> noise = sampleFromGamma(alpha, 1.0f, children.size());
 
-    // get the fraction
-    float frac = 0.25;
-
-    for(int i = 0; i < children.size(); i++){
-        G3LOG(WARNING) << children[i]->getAction().TerseOut() << " => " << children[i]->getPrior();
-    }
+    // get the fraction (TODO: change this back to 0.25, same as alphazero)
+    float frac = 0.05;
 
     for (int i = 0; i < children.size(); i++) {
         children[i]->setPrior(children[i]->getPrior() * (1 - frac) + noise[i] * frac);
     }
 
-    G3LOG(INFO) << "After adding dirichlet noise:";
-    for(int i = 0; i < children.size(); i++){
-        G3LOG(WARNING) << children[i]->getAction().TerseOut() << " => " << children[i]->getPrior();
-    }
 }
 
 bool utils::createDirectory(std::string path){
@@ -224,15 +216,14 @@ bool utils::createDirectory(std::string path){
 }
 
 void utils::test_Dirichlet(){
-    G3LOG(INFO) << "Testing Dirichlet...";
-
+    LOG(INFO) << "Testing Dirichlet...";
     MCTS mcts = MCTS(new Node(), new NeuralNetwork());
     mcts.run_simulations(400);
 }
 
 void utils::test_MCTS(){
 	Environment env = Environment();
-	G3LOG(DEBUG) << env.getFen();
+	LOG(DEBUG) << env.getFen();
 
 	// test mcts tree
 	MCTS mcts = MCTS(new Node(), new NeuralNetwork());
@@ -270,19 +261,19 @@ void utils::test_NN(std::string networkPath){
 	// 	if (move.TerseIn(board.getRules(), moveString.c_str())){
 	// 		board.makeMove(move);
 	// 	} else {
-	// 		G3LOG(FATAL) << "Invalid move: " << moveString;
+	// 		LOG(FATAL) << "Invalid move: " << moveString;
 	// 		exit(EXIT_FAILURE);
 	// 	}
 	// }
 
-    Environment board = Environment("7k/5ppp/8/8/8/6N1/1PPPPPPP/R3KBBN w - - 0 1");
+    Environment board = Environment();
 
 	// test board to input
-	G3LOG(DEBUG) << "Converting board to input state";
+	LOG(DEBUG) << "Converting board to input state";
 	torch::Tensor input = board.boardToInput();
 
 	// save input to image
-	// G3LOG(DEBUG) << "Converting input to image";
+	// LOG(DEBUG) << "Converting input to image";
 	// cv::Mat mat = utils::tensorToMat(input.clone(), 119*8, 8);
 	// utils::saveCvMatToImg(mat, "tests/input.png", 128);
 
@@ -291,25 +282,25 @@ void utils::test_NN(std::string networkPath){
 	// predict
 	nn.predict(input, output);
     if (!output.nan_to_num().equal(output)){
-        G3LOG(WARNING) << output;
-        G3LOG(WARNING) << "Output is NaN";
+        LOG(WARNING) << output;
+        LOG(WARNING) << "Output is NaN";
         exit(EXIT_FAILURE);
     }
 
-	G3LOG(DEBUG) << "predicted";
+	LOG(DEBUG) << "predicted";
 
 	// value is the last element of the output tensor
 	torch::Tensor policy = output.slice(1, 0, 4672).view({73, 8, 8});
-	G3LOG(DEBUG) << "policy: " << policy.sizes();
+	LOG(DEBUG) << "policy: " << policy.sizes();
 	torch::Tensor value = output.slice(1, 4672, 4673);
-	G3LOG(DEBUG) << "value: " << value;
+	LOG(DEBUG) << "value: " << value;
 
 
 
 	// save output to img
-    G3LOG(DEBUG) << "Converting output to image";
+    LOG(DEBUG) << "Converting output to image";
 	cv::Mat img = utils::tensorToMat(policy.clone(), 73*8, 8);
-	G3LOG(DEBUG) << "image: " << img.size();
+	LOG(DEBUG) << "image: " << img.size();
 	utils::saveCvMatToImg(img, "tests/output.png", 255);
 }
 
@@ -323,11 +314,11 @@ void utils::test_Train(std::string networkPath){
 	int batch_size = 128;
 	
 	// data loader
-	G3LOG(DEBUG) << "Creating data loader";
+	LOG(DEBUG) << "Creating data loader";
 	// auto data_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(std::move(train_set), batch_size);
 	auto data_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(std::move(train_set), batch_size);
 
-	G3LOG(DEBUG) << "Data loader created";
+	LOG(DEBUG) << "Data loader created";
 
 
 	// optimizer
@@ -335,7 +326,7 @@ void utils::test_Train(std::string networkPath){
 	torch::optim::Adam optimizer(nn.parameters(), learning_rate);
 
 	
-	nn.train(*data_loader, optimizer, train_set_size, batch_size);
+	nn.trainBatches(*data_loader, optimizer, train_set_size, batch_size);
 }
 
 void utils::testBug(){
@@ -345,7 +336,7 @@ void utils::testBug(){
     Environment env = Environment(fen);
     // make rook move up
     if(!move.TerseIn(env.getRules(), "h8h7")){
-        G3LOG(FATAL) << "Invalid move";
+        LOG(FATAL) << "Invalid move";
         exit(EXIT_FAILURE);
     }
     env.makeMove(move);
@@ -367,6 +358,6 @@ std::string utils::getTimeString() {
 void utils::viewTensorFromFile(std::string filename) {
     torch::Tensor tensor;
     torch::load(tensor, filename);
-    G3LOG(INFO) << "Tensor: " << tensor;
-    G3LOG(INFO) << "Tensor size: " << tensor.sizes();
+    LOG(INFO) << "Tensor: " << tensor;
+    LOG(INFO) << "Tensor size: " << tensor.sizes();
 }

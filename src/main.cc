@@ -10,7 +10,7 @@
 #include "common.hh"
 
 void signal_handling(int signal) {
-	G3LOG(INFO) << "Signal " << signal << " received. Quitting...";
+	LOG(INFO) << "Signal " << signal << " received. Quitting...";
 	g_running = false;
 }
 
@@ -45,20 +45,20 @@ void playContinuously(std::string networkPath, int amount_of_sims, int parallel_
 		int winner = playGame(amount_of_sims, white, black);
 		std::cout << "\n\n\n";
 		if (winner == 1) {
-			G3LOG(INFO) << "White won";
+			LOG(INFO) << "White won";
 			winners.white++;
 		} else if (winner == -1) {
-			G3LOG(INFO) << "Black won";
+			LOG(INFO) << "Black won";
 			winners.black++;
 		} else {
-			G3LOG(INFO) << "Draw";
+			LOG(INFO) << "Draw";
 			winners.draw++;
 		}
-		G3LOG(INFO) << "\nCurrent score: \n";
-		G3LOG(INFO) << "White: " << winners.white;
-		G3LOG(INFO) << "Black: " << winners.black;
-		G3LOG(INFO) << "Draw: " << winners.draw;
-		G3LOG(INFO) << "\n\n\n";
+		LOG(INFO) << "\nCurrent score: \n";
+		LOG(INFO) << "White: " << winners.white;
+		LOG(INFO) << "Black: " << winners.black;
+		LOG(INFO) << "Draw: " << winners.draw;
+		LOG(INFO) << "\n\n\n";
 	}
 }
 
@@ -66,7 +66,7 @@ void playPosition(std::string fen, int amount_of_sims){
 	std::cout << "Creating environment with position: " << fen << std::endl;
 	Environment env = Environment(fen);
 	std::cout << "Creating NN" << std::endl;
-	NeuralNetwork nn = NeuralNetwork();
+	NeuralNetwork nn = NeuralNetwork("");
 	std::cout << "Creating white agent" << std::endl;
 	Agent white = Agent("white", &nn);
 	std::cout << "Creating black agent" << std::endl;
@@ -84,7 +84,11 @@ int main(int argc, char** argv) {
 
 	auto logger = std::make_unique<Logger>();
 
-	int amount_of_sims = 20;
+	// set random seed
+	g_generator.seed(std::random_device{}());
+	LOG(DEBUG) << "Test random value: " << g_generator();
+
+	int amount_of_sims = 50;
 	int parallel_games = 1;
 	if (argc >= 2) {
 		try {
@@ -93,7 +97,7 @@ int main(int argc, char** argv) {
 				parallel_games = std::stoi(argv[2]);
 			}
 		} catch (std::invalid_argument) {
-			G3LOG(FATAL) << "Invalid argument";
+			LOG(FATAL) << "Invalid argument";
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -102,20 +106,20 @@ int main(int argc, char** argv) {
 	// utils::test_MCTS();
 
 	// test neural network input & outputs:
-	// utils::test_NN("models/model.pt");
+	// utils::test_NN("");
 
 	// try training
 	// utils::test_Train("models/model.pt");
 
 	// play chess
-	// playContinuously("", amount_of_sims, parallel_games);
+	playContinuously("models/model.pt", amount_of_sims, parallel_games);
 
 	// load tensor from file
 	// utils::viewTensorFromFile("memory/game-1655150416-650752/move-000-output.pt");
 
 	// playPosition("7k/5ppp/8/8/8/6N1/1PPPPPPP/R3KBBN w - - 0 1", amount_of_sims);
 	// playPosition("6k1/2p1p1p1/R1P1p1Kb/P3P1pP/P5P1/6P1/8/8 w - - 0 1", amount_of_sims);
-	playPosition("5k2/2p1p1p1/R1P1p1Kb/P3P1pP/P5p1/4p1p1/4PqP1/8 w - - 0 1", amount_of_sims);
+	// playPosition("5k2/2p1p1pB/R1P1p1Kb/P3P1pP/P5p1/4p1p1/4PqP1/8 w - - 0 1", amount_of_sims);
 
 	logger->destroy();
 	logger.reset();

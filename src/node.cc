@@ -105,7 +105,7 @@ float Node::getQ(){
 
 float Node::getUCB(){
 	if (this->parent == nullptr){
-		G3LOG(WARNING) << "parent is null";
+		LOG(WARNING) << "parent is null";
 		exit(EXIT_FAILURE);
 	}
 	float exploration_rate = log((this->parent->getVisitCount() + 19652 + 1) / 19652) + 1.25;
@@ -124,7 +124,7 @@ bool Node::getPlayer(){
 	} else if (this->fen[i+1] == 'b') {
 		return false;
 	} else {
-		G3LOG(FATAL) << "error: getPlayer: not white or black";
+		LOG(FATAL) << "error: getPlayer: not white or black";
 		exit(EXIT_FAILURE);
 	}
 }

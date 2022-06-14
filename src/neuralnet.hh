@@ -36,6 +36,60 @@ using ChessDataLoader = torch::data::StatelessDataLoader<
 
 >;
 
+#define CONV_FILTERS 256
+#define PLANE_SIZE 8
+#define OUTPUT_PLANES 73
+#define OUTPUT_SIZE (OUTPUT_PLANES * PLANE_SIZE * PLANE_SIZE)
+#define POLICY_FILTERS 2
+#define VALUE_FILTERS 1
+
+struct ConvBlock : torch::nn::Module {
+	ConvBlock(int in_filters = CONV_FILTERS) {
+		register_module("conv1", conv1 = torch::nn::Conv2d(torch::nn::Conv2dOptions(in_filters, CONV_FILTERS, 3).stride(1).padding(1)));
+		register_module("batchNorm1", batchNorm1 = torch::nn::BatchNorm2d(CONV_FILTERS));
+	}
+
+	torch::Tensor forward(torch::Tensor x) {
+		x = conv1->forward(x);
+		x = batchNorm1->forward(x);
+		x = torch::relu(x);
+		return x;
+	}
+
+	torch::nn::Conv2d conv1 = nullptr;
+	torch::nn::BatchNorm2d batchNorm1 = nullptr;
+};
+
+struct ResidualBlock : torch::nn::Module {
+	ResidualBlock() {
+		// TODO: register modules?
+	}
+
+	torch::Tensor forward(torch::Tensor x) {
+		x = convBlock1.forward(x);
+		x = batchNorm1->forward(x);
+		x = torch::relu(x);
+		x = convBlock2.forward(x);
+		x = batchNorm2->forward(x);
+		return x;
+	}
+
+	torch::nn::BatchNorm2d batchNorm1 = nullptr, batchNorm2 = nullptr;
+	ConvBlock convBlock1, convBlock2;
+};
+
+struct Net : public torch::nn::Module {
+	Net() {
+		// input conv block, then 19 residual blocks
+		
+	}
+
+	torch::nn::Conv2d input_conv = nullptr;
+};
+
+
+
+
 class NeuralNetwork : public torch::nn::Module {
   public:
     NeuralNetwork(std::string path = "", bool useCPU=false);
@@ -46,11 +100,11 @@ class NeuralNetwork : public torch::nn::Module {
 
     torch::Tensor forward(torch::Tensor x);
 
-    void train(ChessDataLoader &loader, torch::optim::Optimizer &optimizer, int data_size, int batch_size);
+    void trainBatches(ChessDataLoader &loader, torch::optim::Optimizer &optimizer, int data_size, int batch_size);
 
     bool loadModel(std::string path);
 
-    bool saveModel(std::string path);
+    bool saveModel(std::string path, bool isTrained = false);
 
   private:
     // set the device depending on if cuda is available

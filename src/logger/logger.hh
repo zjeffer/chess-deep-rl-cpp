@@ -8,9 +8,6 @@
 
 #include "customSink.hh"
 
-// redefine LOG macro because libtorch also uses its own LOG macro
-#define G3LOG(level) if (!g3::logLevel(level)) {} else INTERNAL_LOG_MESSAGE(level).stream()
-
 class Logger {
   public:
     Logger();

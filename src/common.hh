@@ -1,4 +1,5 @@
 #pragma once
+#undef LOG
 #include "logger/logger.hh"
 #include <random>
 

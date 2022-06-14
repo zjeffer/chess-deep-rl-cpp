@@ -18,15 +18,14 @@ Game::Game(int simulations, Environment& env, Agent& white, Agent& black) {
 
 	this->previous_moves = new thc::Move[2];
 
-	// create random id
-	std::random_device rd = std::random_device();
-	this->rng.seed(rd());
+	// for stochastic move selection
 	this->dist = std::uniform_int_distribution<int>(0, RAND_MAX);
-
+	// for creating random id
 	std::uniform_int_distribution<int> game_id_dist = std::uniform_int_distribution<int>(0, 1000000);
 	
+	// create a random id
 	std::string current_date = std::to_string(std::time(nullptr));
-	this->game_id = "game-" + current_date + "-" + std::to_string(game_id_dist(this->rng));
+	this->game_id = "game-" + current_date + "-" + std::to_string(game_id_dist(g_generator));
 }
 
 void Game::reset() {
@@ -43,12 +42,12 @@ int Game::playGame(bool stochastic) {
 		this->env.printBoard();
 		
 		this->playMove();
-		G3LOG(INFO) << "Value according to white: " << this->white.getMCTS()->getRoot()->getValue();
-		G3LOG(INFO) << "Value according to black: " << this->black.getMCTS()->getRoot()->getValue();
+		LOG(INFO) << "Value according to white: " << this->white.getMCTS()->getRoot()->getQ();
+		LOG(INFO) << "Value according to black: " << this->black.getMCTS()->getRoot()->getQ();
 
 		counter++;
 		if (counter > MAX_MOVES) {
-			G3LOG(INFO) << "Game over by move limit";
+			LOG(INFO) << "Game over by move limit";
 			break;
 		} 
 		
@@ -56,6 +55,10 @@ int Game::playGame(bool stochastic) {
 			this->env.printDrawType(drawType);
 			break;
 		}
+	}
+
+	if (!g_running) {
+		exit(EXIT_SUCCESS);
 	}
 
 	if (this->env.isGameOver()){
@@ -81,9 +84,10 @@ int Game::playGame(bool stochastic) {
 
 void Game::playMove(){
 	Agent* currentPlayer = this->env.getCurrentPlayer() ? &this->white : &this->black;
-	G3LOG(INFO) << "Current player: " << currentPlayer->getName();	
+	LOG(INFO) << "Current player: " << currentPlayer->getName();	
 
 	// update mcts tree
+	// TODO: use subtree of previously chosen move as next root
 	currentPlayer->getMCTS()->setRoot(new Node(this->env.getFen(), nullptr, thc::Move(), 0.0));
 
 	// run the sims
@@ -102,12 +106,12 @@ void Game::playMove(){
 	this->saveToMemory(element);
 
 	if ((int)childNodes.size() == 0){
-		G3LOG(WARNING) << "No moves available";
+		LOG(WARNING) << "No moves available";
 		exit(EXIT_FAILURE);
 	}
 
 	// print moves
-	G3LOG(DEBUG) << "Moves: ";
+	LOG(DEBUG) << "Moves: ";
 	for (int i = 0; i < childNodes.size(); i++) {
 		thc::Move move = childNodes[i]->getAction();
 		std::cout << "Move " << i << ": " << move.NaturalOut(this->env.getRules());
@@ -124,38 +128,39 @@ void Game::playMove(){
 
 	// see if move is valid
 	if (!bestMove.Valid()){
-		G3LOG(WARNING) << "Invalid move";
+		LOG(WARNING) << "Invalid move";
 		exit(EXIT_FAILURE);
 	}	
 
-	G3LOG(DEBUG) << this->env.getFen();
-	G3LOG(INFO) << "Chosen move: " << this->env.getRules()->full_move_count << ". " << bestMove.NaturalOut(this->env.getRules());
+	LOG(DEBUG) << this->env.getFen();
+	LOG(INFO) << "Chosen move: " << this->env.getRules()->full_move_count << ". " << bestMove.NaturalOut(this->env.getRules());
 	
 	// update previous moves
 	this->previous_moves[0] = this->previous_moves[1];
 	this->previous_moves[1] = bestMove;
 
-	// G3LOG(DEBUG) << "Current prevmoves: " << this->previous_moves[0].src << "-" << this->previous_moves[0].dst << " and " << this->previous_moves[1].src << "-" << this->previous_moves[1].dst;
+	// LOG(DEBUG) << "Current prevmoves: " << this->previous_moves[0].src << "-" << this->previous_moves[0].dst << " and " << this->previous_moves[1].src << "-" << this->previous_moves[1].dst;
 
 	this->env.makeMove(bestMove);
 	thc::ILLEGAL_REASON reason;
 	if (!this->env.getRules()->IsLegal(reason)){
-		G3LOG(WARNING) << "Reached an illegal position after the last move. Reason: " << reason;
+		LOG(WARNING) << "Reached an illegal position after the last move. Reason: " << reason;
 		this->env.printBoard();
-		G3LOG(DEBUG) << this->env.getFen();
-		G3LOG(DEBUG) << bestMove.src << "-" << bestMove.dst;
-		G3LOG(DEBUG) << bestMove.special;
+		LOG(DEBUG) << this->env.getFen();
+		LOG(DEBUG) << bestMove.src << "-" << bestMove.dst;
+		LOG(DEBUG) << bestMove.special;
 		exit(EXIT_FAILURE);
 	}
 }
 
 
 thc::Move Game::getBestMoveStochastic(std::vector<MoveProb> &probs){
+	// TODO: add temperature control
 	float total_probability = 0;
 	for (int i = 0; i < (int)probs.size(); i++){
 		total_probability += probs[i].prob;
 	}
-	float p = (this->dist(this->rng) / static_cast<float>(RAND_MAX)) * total_probability;
+	float p = (this->dist(g_generator) / static_cast<float>(RAND_MAX)) * total_probability;
 	int index = 0;
 	while ((p -= probs[index].prob) > 0) {
 		index++;
@@ -186,7 +191,19 @@ void Game::saveToMemory(MemoryElement element) {
 
 void Game::updateMemory(int winner){
 	for (int i = 0; i < (int)this->memory.size(); i++){
-		this->memory[i].winner = winner;
+		if (winner == 0) {
+			this->memory[i].winner = 0;
+			continue;
+		}
+		Environment env = Environment(this->memory[i].state);
+		bool winnerIsWhite = winner == 1;
+		if (env.getCurrentPlayer() == winnerIsWhite) {
+			// if winner is the current player, set value to 1
+			this->memory[i].winner = 1;
+		} else {
+			// if winner is not current player, set value to -1
+			this->memory[i].winner = -1;
+		}
 	}
 }
 
@@ -225,10 +242,10 @@ void Game::memoryToFile(){
 	}
 
 	// create a directory for the current game
-	G3LOG(DEBUG) << "Creating directory for game id = " << this->game_id;
+	LOG(DEBUG) << "Creating directory for game id = " << this->game_id;
 	std::string directory = "memory/" + this->game_id;
 	if (!utils::createDirectory(directory)){
-		G3LOG(WARNING) << "Could not create directory for current game";
+		LOG(WARNING) << "Could not create directory for current game";
 		exit(EXIT_FAILURE);
 	}
 
@@ -242,11 +259,11 @@ void Game::memoryToFile(){
 		torch::Tensor input = inputs[i].clone();
 		torch::Tensor output = outputs[i].clone();
 		if (input.numel() == 0){
-			G3LOG(WARNING) << "Empty input tensor";
+			LOG(WARNING) << "Empty input tensor";
 			exit(EXIT_FAILURE);
 		}
 		if (output.numel() == 0){
-			G3LOG(WARNING) << "Empty output tensor";
+			LOG(WARNING) << "Empty output tensor";
 			exit(EXIT_FAILURE);
 		}
 		torch::save(inputs[i].clone(), directory + move + "-input.pt");

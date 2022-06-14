@@ -26,7 +26,7 @@ bool Environment::isGameOver() {
 	bool okay = this->rules.Evaluate(this->terminalState);
 
 	if (!okay){
-		G3LOG(FATAL) << "Error: Game received illegal position" << std::endl;
+		LOG(FATAL) << "Error: Game received illegal position" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 
@@ -35,7 +35,7 @@ bool Environment::isGameOver() {
 
 void Environment::reset() {
 	if (!this->rules.Forsyth("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")){
-        G3LOG(FATAL) << "Error: Could not reset environment";
+        LOG(FATAL) << "Error: Could not reset environment";
         exit(EXIT_FAILURE);
     }
 }
@@ -43,28 +43,28 @@ void Environment::reset() {
 void Environment::printDrawType(thc::DRAWTYPE drawType) {
     switch (drawType) {
         case thc::DRAWTYPE::DRAWTYPE_50MOVE:
-            G3LOG(INFO) << "Draw by 50 move rule";
+            LOG(INFO) << "Draw by 50 move rule";
             break;
         case thc::DRAWTYPE::DRAWTYPE_INSUFFICIENT:
-            G3LOG(INFO) << "Draw by insufficient material";
+            LOG(INFO) << "Draw by insufficient material";
             break;
         case thc::DRAWTYPE::DRAWTYPE_INSUFFICIENT_AUTO:
-            G3LOG(INFO) << "Draw by insufficient material (auto)";
+            LOG(INFO) << "Draw by insufficient material (auto)";
             break;
         case thc::DRAWTYPE::DRAWTYPE_REPITITION:
-            G3LOG(INFO) << "Draw by repetition";
+            LOG(INFO) << "Draw by repetition";
             break;
         case thc::DRAWTYPE::NOT_DRAW:
-            G3LOG(INFO) << "Not a draw";
+            LOG(INFO) << "Not a draw";
             break;
         default:
-            G3LOG(WARNING) << "Unknown draw type";
+            LOG(WARNING) << "Unknown draw type";
             break;
     }
 }
 
 void Environment::printBoard() {
-    G3LOG(INFO) << "\n" << this->rules.ToDebugStr();
+    LOG(INFO) << "\n" << this->rules.ToDebugStr();
 }
 
 bool Environment::getCurrentPlayer() {
@@ -88,14 +88,14 @@ int Environment::getAmountOfPieces(){
 std::string Environment::makeMove(thc::Move move) {
     // check if move is empty
     if (!move.Valid()){
-        G3LOG(FATAL) << "Move is not valid" << std::endl;
+        LOG(FATAL) << "Move is not valid" << std::endl;
         exit(EXIT_FAILURE);
     }
     int amountOfPiecesBeforeMove = this->getAmountOfPieces();
 	this->rules.PlayMove(move);
     int amountOfPiecesAfterMove = this->getAmountOfPieces();
     if (abs(amountOfPiecesBeforeMove - amountOfPiecesAfterMove) > 1){
-        G3LOG(FATAL) << "Move did not result in correct amount of pieces" << std::endl;
+        LOG(FATAL) << "Move did not result in correct amount of pieces" << std::endl;
         exit(EXIT_FAILURE);
     }
     return this->getFen();
