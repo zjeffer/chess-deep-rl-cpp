@@ -15,7 +15,7 @@ void signal_handling(int signal) {
 }
 
 
-int playGame(int amount_of_sims, Agent& white, Agent& black){
+int playGame(int amount_of_sims, Agent* white, Agent* black){
 	Environment env = Environment();
 	Game game = Game(amount_of_sims, env, white, black);
 	return game.playGame();	
@@ -39,8 +39,8 @@ void playContinuously(std::string networkPath, int amount_of_sims, int parallel_
 	// TODO: make parallel games possible
 
 	while (g_running){
-		Agent white = Agent("white", nn);
-		Agent black = Agent("black", nn);
+		Agent* white = new Agent("white", nn);
+		Agent* black = new Agent("black", nn);
 		
 		int winner = playGame(amount_of_sims, white, black);
 		std::cout << "\n\n\n";
@@ -66,11 +66,9 @@ void playPosition(std::string fen, int amount_of_sims){
 	std::cout << "Creating environment with position: " << fen << std::endl;
 	Environment env = Environment(fen);
 	std::cout << "Creating NN" << std::endl;
-	NeuralNetwork nn = NeuralNetwork("");
-	std::cout << "Creating white agent" << std::endl;
-	Agent white = Agent("white", &nn);
-	std::cout << "Creating black agent" << std::endl;
-	Agent black = Agent("black", &nn);
+	NeuralNetwork* nn = new NeuralNetwork("models/model.pt", false);
+	Agent* white = new Agent("white", nn);
+	Agent* black = new Agent("black", nn);
 	std::cout << "Creating game" << std::endl;
 	Game game = Game(amount_of_sims, env, white, black);
 	game.getEnvironment()->printBoard();
@@ -112,14 +110,14 @@ int main(int argc, char** argv) {
 	// utils::test_Train("models/model.pt");
 
 	// play chess
-	playContinuously("models/model.pt", amount_of_sims, parallel_games);
+	// playContinuously("models/model.pt", amount_of_sims, parallel_games);
 
 	// load tensor from file
 	// utils::viewTensorFromFile("memory/game-1655150416-650752/move-000-output.pt");
 
 	// playPosition("7k/5ppp/8/8/8/6N1/1PPPPPPP/R3KBBN w - - 0 1", amount_of_sims);
 	// playPosition("6k1/2p1p1p1/R1P1p1Kb/P3P1pP/P5P1/6P1/8/8 w - - 0 1", amount_of_sims);
-	// playPosition("5k2/2p1p1pB/R1P1p1Kb/P3P1pP/P5p1/4p1p1/4PqP1/8 w - - 0 1", amount_of_sims);
+	playPosition("5k2/2p1p1pB/R1P1p1Kb/P3P1pP/P5p1/4p1p1/4PqP1/8 w - - 0 1", amount_of_sims);
 
 	logger->destroy();
 	logger.reset();

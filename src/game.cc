@@ -4,16 +4,16 @@
 #include "utils.hh"
 #include "common.hh"
 
-Game::Game(int simulations, Environment& env, Agent& white, Agent& black) {
+Game::Game(int simulations, Environment& env, Agent* white, Agent* black) {
 	this->simulations = simulations;
 	this->env = env;
 	this->white = white;
 	this->black = black;
 
 	if(env.getCurrentPlayer()){
-		this->white.updateMCTS(new Node(env.getFen(), nullptr, thc::Move(), 0.0));
+		this->white->updateMCTS(new Node(env.getFen(), nullptr, thc::Move(), 0.0));
 	} else {
-		this->black.updateMCTS(new Node(env.getFen(), nullptr, thc::Move(), 0.0));
+		this->black->updateMCTS(new Node(env.getFen(), nullptr, thc::Move(), 0.0));
 	}
 
 	this->previous_moves = new thc::Move[2];
@@ -42,8 +42,8 @@ int Game::playGame(bool stochastic) {
 		this->env.printBoard();
 		
 		this->playMove();
-		LOG(INFO) << "Value according to white: " << this->white.getMCTS()->getRoot()->getQ();
-		LOG(INFO) << "Value according to black: " << this->black.getMCTS()->getRoot()->getQ();
+		LOG(INFO) << "Value according to white: " << this->white->getMCTS()->getRoot()->getQ();
+		LOG(INFO) << "Value according to black: " << this->black->getMCTS()->getRoot()->getQ();
 
 		counter++;
 		if (counter > MAX_MOVES) {
@@ -83,7 +83,7 @@ int Game::playGame(bool stochastic) {
 }
 
 void Game::playMove(){
-	Agent* currentPlayer = this->env.getCurrentPlayer() ? &this->white : &this->black;
+	Agent* currentPlayer = this->env.getCurrentPlayer() ? this->white : this->black;
 	LOG(INFO) << "Current player: " << currentPlayer->getName();	
 
 	// update mcts tree

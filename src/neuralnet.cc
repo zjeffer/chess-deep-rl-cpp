@@ -179,6 +179,8 @@ NeuralNetwork::NeuralNetwork(std::string path, bool useCPU) : torch::nn::Module(
         }
     }
 
+    LOG(DEBUG) << "Loading model from: " << path;
+
     this->buildNetwork();
     // if the path is given, load the model
     if (!path.empty()){

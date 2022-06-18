@@ -19,7 +19,7 @@ class Game {
 	 * @param white 
 	 * @param black 
 	 */
-    Game(int simulations, Environment& env, Agent& white, Agent& black);
+    Game(int simulations, Environment& env, Agent* white, Agent* black);
 
 	/**
 	 * @brief Play one game. Returns the winner.
@@ -98,8 +98,8 @@ class Game {
 	Environment env;
 	
 	// the agent that will interact with the environment
-	Agent white;
-	Agent black;
+	Agent* white;
+	Agent* black;
 
 	// the pair of previous moves played
 	thc::Move *previous_moves;
