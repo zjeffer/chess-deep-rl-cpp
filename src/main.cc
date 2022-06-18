@@ -26,8 +26,6 @@ void playContinuously(std::string networkPath, int amount_of_sims, int parallel_
 	// TODO: is it necessary to load the network every time?
 	NeuralNetwork* nn = new NeuralNetwork(networkPath);
 
-	// TODO: fix multiple loads of the NN every time a new game starts
-
 	struct Winners {
 		int white = 0;
 		int black = 0;

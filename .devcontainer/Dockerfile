@@ -18,6 +18,13 @@ RUN echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
 USER $USERNAME
 ENV HOME /home/$USERNAME
 
+################# ZSH #################
+RUN sudo pacman -Sy --noconfirm zsh
+ENV TERM xterm
+ENV SHELL /bin/zsh
+RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
+ADD .zshrc $HOME
+
 # g3log
 COPY ./vendor/g3log/ ./vendor/g3log/
 RUN sudo chown -R $USERNAME:$USERNAME /app
