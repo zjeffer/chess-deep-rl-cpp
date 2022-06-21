@@ -114,10 +114,10 @@ void Game::playMove(){
 	LOG(DEBUG) << "Moves: ";
 	for (int i = 0; i < childNodes.size(); i++) {
 		thc::Move move = childNodes[i]->getAction();
-		std::cout << "Move " << i << ": " << move.NaturalOut(this->env.getRules());
-		std::cout << " " << childNodes[i]->getVisitCount() << " visits" << std::endl;
+		LOG(DEBUG) << "Move " << i << ": " << move.NaturalOut(this->env.getRules())
+			<< " " << childNodes[i]->getVisitCount() << " visits. " 
+			<< "PUCT score: " << childNodes[i]->getQ() << " + " << childNodes[i]->getUCB();
 	}
-
 
 	thc::Move bestMove;
 	if (this->stochastic){

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <chrono>
 #include <iostream>
+#include <tuple>
 
 #include "chess/thc.hh"
 #include "mcts.hh"
@@ -23,7 +24,12 @@ void MCTS::run_simulations(int num_simulations) {
 
 	// add dirichlet noise to the root node
 	float value = expand(this->root);
-	utils::addDirichletNoise(this->root);
+	LOG(DEBUG) << "Root node value: " << value;
+	// utils::addDirichletNoise(this->root);
+	for (Node* child : this->root->getChildren()) {
+		LOG(DEBUG) << "Child " << child->getAction().TerseOut() << ": " << child->getQ() << " + " << child->getUCB() << ". Prior: " << child->getPrior();
+	}
+
 
 	tqdm bar;
 	for (int i = 0; i < num_simulations && g_running; i++) {
@@ -60,7 +66,9 @@ Node* MCTS::select(Node* root){
 		// LOG(INFO) << current->getFen();
 		// LOG(INFO) << "# Children: " << children.size();
 		for (int i = 0; i < (int)children.size(); i++) {
+			// if (traversals == 1) {
 			// LOG(DEBUG) << "Child " << children[i]->getAction().TerseOut() << ": " << children[i]->getQ() << " + " << children[i]->getUCB() << ". Prior: " << children[i]->getPrior();
+			// }
 			Node* child = children[i];
 			float score = child->getPUCTScore();
 			if (score > best_score) {
@@ -73,7 +81,9 @@ Node* MCTS::select(Node* root){
 			exit(EXIT_FAILURE);
 		}
 		current = best_child;
-		// LOG(DEBUG) << "Selected child " << current->getAction().TerseOut() << " with score: " << best_score;
+		// if (traversals == 1) {
+		// 	LOG(DEBUG) << "Selected child " << current->getAction().TerseOut() << " with score: " << best_score;
+		// }
     }
 	auto stop = std::chrono::high_resolution_clock::now();
 	// LOG(DEBUG << "Selection: " << std::chrono::duration_cast<std::chrono::microseconds>(stop - start_time).count() << " microseconds for " << traversals << " traversals";
@@ -85,22 +95,20 @@ float MCTS::expand(Node* node){
 	// convert board to input state
 	Environment env = Environment(node->getFen());
 	torch::Tensor inputState = env.boardToInput();
-	
-	// output of neural network
-	torch::Tensor output;
-	
+
+
 	// send input to neural network
-	this->nn->predict(inputState, output);
+	std::tuple<torch::Tensor, torch::Tensor> outputs = this->nn->predict(inputState);
 	// get policy and value
-	torch::Tensor output_policy = output.slice(1, 0, 4672).view({73, 8, 8});
-	float output_value = output.slice(1, 4672, 4673).item<float>();
+	torch::Tensor output_policy = std::get<0>(outputs).view({73, 8, 8});
+	float output_value = std::get<1>(outputs).item<float>();
 
 	// output to moves
 	std::vector<thc::Move> legal_moves;
 	env.getLegalMoves(legal_moves);
 
 	// TODO: this might not work properly
-	/* if (legal_moves.size() == 0) {
+	if (legal_moves.size() == 0) {
 		// game is finished in this node, calculate value
 		// LOG(INFO) << "No legal moves in this node: " << node->getFen();
 		if (env.isGameOver()) {
@@ -120,7 +128,7 @@ float MCTS::expand(Node* node){
 			LOG(WARNING) << "Game is not over but no legal moves in this node: " << node->getFen();
 			exit(EXIT_FAILURE);
 		}
-	} */
+	}
 	
 	std::map<thc::Move, float> moveProbs = utils::outputProbsToMoves(output_policy, legal_moves);
 

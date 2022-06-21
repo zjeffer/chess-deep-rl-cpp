@@ -92,7 +92,12 @@
 		"__string": "cpp",
 		"ios": "cpp",
 		"charconv": "cpp",
-		"span": "cpp"
+		"span": "cpp",
+		"__hash_table": "cpp",
+		"__split_buffer": "cpp",
+		"__tree": "cpp",
+		"queue": "cpp",
+		"stack": "cpp"
 	},
 	"C_Cpp.errorSquiggles": "Enabled"
 }

@@ -202,8 +202,7 @@ void utils::addDirichletNoise(Node* root, float alpha) {
     // get the noise
     std::vector<float> noise = sampleFromGamma(alpha, 1.0f, children.size());
 
-    // get the fraction (TODO: change this back to 0.25, same as alphazero)
-    float frac = 0.05;
+    float frac = 0.25;
 
     for (int i = 0; i < children.size(); i++) {
         children[i]->setPrior(children[i]->getPrior() * (1 - frac) + noise[i] * frac);
@@ -243,29 +242,6 @@ void utils::test_MCTS(){
 
 void utils::test_NN(std::string networkPath){
 	NeuralNetwork nn = NeuralNetwork(networkPath);
-
-	// Environment board = Environment();
-	// std::vector<std::string> moveList = {
-	// 	"e2e4", 
-	// 	"e7e5",
-	// 	"g1f3",
-	// 	"b8c6",
-	// 	"f1c4",
-	// 	"f8c5",
-	// 	"e1g1"
-	// };
-
-	// // play the moves
-	// for (std::string moveString : moveList){
-	// 	thc::Move move;
-	// 	if (move.TerseIn(board.getRules(), moveString.c_str())){
-	// 		board.makeMove(move);
-	// 	} else {
-	// 		LOG(FATAL) << "Invalid move: " << moveString;
-	// 		exit(EXIT_FAILURE);
-	// 	}
-	// }
-
     Environment board = Environment();
 
 	// test board to input
@@ -277,12 +253,12 @@ void utils::test_NN(std::string networkPath){
 	// cv::Mat mat = utils::tensorToMat(input.clone(), 119*8, 8);
 	// utils::saveCvMatToImg(mat, "tests/input.png", 128);
 
-	torch::Tensor output = torch::zeros({4673});
-
 	// predict
-	nn.predict(input, output);
-    if (!output.nan_to_num().equal(output)){
-        LOG(WARNING) << output;
+    std::tuple<torch::Tensor, torch::Tensor> outputs = nn.predict(input);
+    torch::Tensor policyOutput = std::get<0>(outputs).view({73, 8, 8});
+    float valueOutput = std::get<1>(outputs).item<float>();
+    if (!policyOutput.nan_to_num().equal(policyOutput)){
+        LOG(WARNING) << policyOutput;
         LOG(WARNING) << "Output is NaN";
         exit(EXIT_FAILURE);
     }
@@ -290,16 +266,12 @@ void utils::test_NN(std::string networkPath){
 	LOG(DEBUG) << "predicted";
 
 	// value is the last element of the output tensor
-	torch::Tensor policy = output.slice(1, 0, 4672).view({73, 8, 8});
-	LOG(DEBUG) << "policy: " << policy.sizes();
-	torch::Tensor value = output.slice(1, 4672, 4673);
-	LOG(DEBUG) << "value: " << value;
-
-
+	LOG(DEBUG) << "policy: " << policyOutput.sizes();
+	LOG(DEBUG) << "value: " << valueOutput;
 
 	// save output to img
     LOG(DEBUG) << "Converting output to image";
-	cv::Mat img = utils::tensorToMat(policy.clone(), 73*8, 8);
+	cv::Mat img = utils::tensorToMat(policyOutput.clone(), 73*8, 8);
 	LOG(DEBUG) << "image: " << img.size();
 	utils::saveCvMatToImg(img, "tests/output.png", 255);
 }
@@ -323,7 +295,8 @@ void utils::test_Train(std::string networkPath){
 
 	// optimizer
 	int learning_rate = 0.2;
-	torch::optim::Adam optimizer(nn.parameters(), learning_rate);
+	torch::optim::Adam optimizer(nn.getNetwork()->parameters(), learning_rate);
+    optimizer.zero_grad();
 
 	
 	nn.trainBatches(*data_loader, optimizer, train_set_size, batch_size);

@@ -37,6 +37,7 @@ file (GLOB SOURCE_FILES
   ${PROJECT_SOURCE_DIR}/src/chess/*.hh
   ${PROJECT_SOURCE_DIR}/src/logger/*.cc
   ${PROJECT_SOURCE_DIR}/src/logger/*.hh
+  ${PROJECT_SOURCE_DIR}/src/neuralNetwork/*.hh
 )
 
 # create executable
