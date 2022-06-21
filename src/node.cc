@@ -109,7 +109,7 @@ float Node::getUCB(){
 		exit(EXIT_FAILURE);
 	}
 	float exploration_rate = log((this->parent->getVisitCount() + 19652 + 1) / 19652) + 1.25;
-	exploration_rate *= sqrt(this->parent->getVisitCount()) / (this->visit_count + 1);
+	exploration_rate *= sqrt(this->parent->getVisitCount() + 1) / (this->visit_count + 1);
 	return exploration_rate * this->getPrior();
 }
 

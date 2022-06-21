@@ -116,8 +116,10 @@ void Game::playMove(){
 		thc::Move move = childNodes[i]->getAction();
 		LOG(DEBUG) << "Move " << i << ": " << move.NaturalOut(this->env.getRules())
 			<< " " << childNodes[i]->getVisitCount() << " visits. " 
-			<< "PUCT score: " << childNodes[i]->getQ() << " + " << childNodes[i]->getUCB();
+			<< "PUCT score: " << childNodes[i]->getQ() << " + " << childNodes[i]->getUCB() << ". Prior: " << childNodes[i]->getPrior();
 	}
+	// print tree depth
+	LOG(DEBUG) << "Depth: " << currentPlayer->getMCTS()->getTreeDepth(currentPlayer->getMCTS()->getRoot());
 
 	thc::Move bestMove;
 	if (this->stochastic){

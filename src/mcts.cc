@@ -118,7 +118,6 @@ float MCTS::expand(Node* node){
 					return 1.0;
 				case thc::TERMINAL_BSTALEMATE:
 				case thc::TERMINAL_WSTALEMATE:
-					// LOG(DEBUG) << "Game is over by draw in this node: " << node->getFen();
 					return 0.0;
 				default:
 					LOG(WARNING) << "Unknown terminal state: " << env.terminalState;
@@ -131,15 +130,23 @@ float MCTS::expand(Node* node){
 	}
 	
 	std::map<thc::Move, float> moveProbs = utils::outputProbsToMoves(output_policy, legal_moves);
+	float sum_priors = 0.0;
+	for (auto moveProb : moveProbs) {
+		sum_priors += moveProb.second;
+	}
 
 	// add nodes for every move
 	for (int i = 0; i < (int)legal_moves.size(); i++) {
 		thc::Move move = legal_moves[i];
 		// make the move on the board
-		std::string new_fen = env.makeMove(move);
+		// TODO: fix wrong half_move_clock & full_move_count
+		std::string new_fen = env.pushMove(move);
 
 		// get the move probability for this move
 		float prior = moveProbs[move];
+		if (sum_priors != 0) {
+			prior /= sum_priors;
+		}
 		
 		// create a new node
 		Node* child = new Node(new_fen, node, move, prior);
@@ -154,9 +161,10 @@ float MCTS::expand(Node* node){
 
 
 void MCTS::backpropagate(Node* node, float value){
+	bool player = node->getPlayer();
 	while (node != nullptr) {
 		node->incrementVisit();
-		if (node->getPlayer()) {
+		if (node->getPlayer() == player) {
 			node->setValue(node->getValue() + value);
 		} else {
 			node->setValue(node->getValue() + 1 - value);

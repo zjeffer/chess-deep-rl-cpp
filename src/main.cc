@@ -114,8 +114,8 @@ int main(int argc, char** argv) {
 	// utils::viewTensorFromFile("memory/game-1655150416-650752/move-000-output.pt");
 
 	// playPosition("7k/5ppp/8/8/8/6N1/1PPPPPPP/R3KBBN w - - 0 1", amount_of_sims);
-	// playPosition("6k1/2p1p1p1/R1P1p1Kb/P3P1pP/P5P1/6P1/8/8 w - - 0 1", amount_of_sims);
-	playPosition("5k2/2p1p1pB/R1P1p1Kb/P3P1pP/P5p1/4p1p1/4PqP1/8 w - - 0 1", amount_of_sims);
+	// playPosition("5k2/2p1p1pB/R1P1p1Kb/P3P1pP/P5p1/4p1p1/4PqP1/8 w - - 0 1", amount_of_sims);
+	playPosition("5r1k/7p/7K/7P/6Q1/8/8/8 w - - 0 1", amount_of_sims);
 
 	logger->destroy();
 	logger.reset();
