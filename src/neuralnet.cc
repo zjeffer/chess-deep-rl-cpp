@@ -30,14 +30,17 @@ bool NeuralNetwork::loadModel(std::string path) {
 bool NeuralNetwork::saveModel(std::string path, bool isTrained){
     try {
         if (path.size() == 0) {
-            path = "./models/model_" + utils::getTimeString() + ".pt";
+            path = "./models/model_" + utils::getTimeString();
+        }
+        if (isTrained) {
+            path.append("_trained");
+        }
+        if (!path.ends_with(".pt")) {
+            path.append(".pt");
         }
         if (std::filesystem::exists(path)) {
             LOG(WARNING) << "Model already exists at: " << path << ". Overwriting...";
             std::filesystem::remove(path);
-        }
-        if (isTrained) {
-            path.append("_trained");
         }
         // save model to path
         LOG(INFO) << "Saving model to: " << path;
@@ -141,8 +144,8 @@ void NeuralNetwork::trainBatches(ChessDataLoader &loader, torch::optim::Optimize
 		value_output = value_output.view({size, 1});
 
 		// loss
-		// policy loss is cross entropy loss
-		auto policy_loss = -torch::sum(policy_target * torch::clamp(torch::log(policy_output), -10e1, 10e1));
+		auto policy_loss = -(policy_output * policy_target);
+        policy_loss = policy_loss.sum(1).mean();
 		auto value_loss = torch::mse_loss(value_output, value_target);
 		
 		LOG(INFO) << "Policy loss: " << policy_loss;

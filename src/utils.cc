@@ -283,12 +283,11 @@ void utils::test_Train(std::string networkPath){
 	
 	auto train_set = chessDataSet.map(torch::data::transforms::Stack<>());
 	int train_set_size = train_set.size().value();
-	int batch_size = 128;
+	int batch_size = 256;
 	
 	// data loader
 	LOG(DEBUG) << "Creating data loader";
-	// auto data_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(std::move(train_set), batch_size);
-	auto data_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(std::move(train_set), batch_size);
+	auto data_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(std::move(train_set), batch_size);
 
 	LOG(DEBUG) << "Data loader created";
 

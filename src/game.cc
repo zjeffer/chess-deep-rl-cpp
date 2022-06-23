@@ -118,9 +118,7 @@ void Game::playMove(){
 			<< " " << childNodes[i]->getVisitCount() << " visits. " 
 			<< "PUCT score: " << childNodes[i]->getQ() << " + " << childNodes[i]->getUCB() << ". Prior: " << childNodes[i]->getPrior();
 	}
-	// print tree depth
-	LOG(DEBUG) << "Depth: " << currentPlayer->getMCTS()->getTreeDepth(currentPlayer->getMCTS()->getRoot());
-
+	
 	thc::Move bestMove;
 	if (this->stochastic){
 		bestMove = getBestMoveStochastic(element.probs);

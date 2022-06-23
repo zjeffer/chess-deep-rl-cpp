@@ -24,11 +24,7 @@ void MCTS::run_simulations(int num_simulations) {
 
 	// add dirichlet noise to the root node
 	float value = expand(this->root);
-	LOG(DEBUG) << "Root node value: " << value;
-	// utils::addDirichletNoise(this->root);
-	for (Node* child : this->root->getChildren()) {
-		LOG(DEBUG) << "Child " << child->getAction().TerseOut() << ": " << child->getQ() << " + " << child->getUCB() << ". Prior: " << child->getPrior();
-	}
+	utils::addDirichletNoise(this->root);
 
 
 	tqdm bar;
@@ -63,12 +59,7 @@ Node* MCTS::select(Node* root){
 		}
 		Node* best_child = children[rand() % children.size()];
 		float best_score = -1;
-		// LOG(INFO) << current->getFen();
-		// LOG(INFO) << "# Children: " << children.size();
 		for (int i = 0; i < (int)children.size(); i++) {
-			// if (traversals == 1) {
-			// LOG(DEBUG) << "Child " << children[i]->getAction().TerseOut() << ": " << children[i]->getQ() << " + " << children[i]->getUCB() << ". Prior: " << children[i]->getPrior();
-			// }
 			Node* child = children[i];
 			float score = child->getPUCTScore();
 			if (score > best_score) {
@@ -81,12 +72,8 @@ Node* MCTS::select(Node* root){
 			exit(EXIT_FAILURE);
 		}
 		current = best_child;
-		// if (traversals == 1) {
-		// 	LOG(DEBUG) << "Selected child " << current->getAction().TerseOut() << " with score: " << best_score;
-		// }
     }
 	auto stop = std::chrono::high_resolution_clock::now();
-	// LOG(DEBUG << "Selection: " << std::chrono::duration_cast<std::chrono::microseconds>(stop - start_time).count() << " microseconds for " << traversals << " traversals";
 
 	return current;
 }
@@ -110,7 +97,6 @@ float MCTS::expand(Node* node){
 	// TODO: this might not work properly
 	if (legal_moves.size() == 0) {
 		// game is finished in this node, calculate value
-		// LOG(INFO) << "No legal moves in this node: " << node->getFen();
 		if (env.isGameOver()) {
 			switch(env.terminalState) {
 				case thc::TERMINAL_BCHECKMATE:
