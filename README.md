@@ -1,5 +1,5 @@
 # chess-deep-rl-cpp
-C++ version of my chess-deep-rl project. WIP
+C++ version of my [chess-deep-rl](https://github.com/zjeffer/chess-deep-rl) project. WIP
 
 
 ## TODO
