@@ -1,3 +1,6 @@
 [submodule "vendor/g3log"]
 	path = vendor/g3log
 	url = https://github.com/KjellKod/g3log.git
+[submodule "vendor/csv"]
+	path = vendor/csv
+	url = git@github.com:ben-strasser/fast-cpp-csv-parser.git
