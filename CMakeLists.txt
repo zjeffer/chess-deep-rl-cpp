@@ -40,6 +40,9 @@ file (GLOB SOURCE_FILES
   ${PROJECT_SOURCE_DIR}/src/neuralNetwork/*.hh
 )
 
+####### csv parsing ######
+include_directories("${PROJECT_SOURCE_DIR}/vendor/csv")
+
 # create executable
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 # link libraries (opencv, torch, g3log)
