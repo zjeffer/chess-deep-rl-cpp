@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
 	// utils::test_MCTS();
 
 	// test neural network input & outputs:
-	// utils::test_NN("");
+	// utils::test_NN("models/model_2022-07-03_13-43-24_trained.pt");
 
 	// try training
 	utils::test_Train("models/model.pt");

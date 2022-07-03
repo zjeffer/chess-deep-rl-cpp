@@ -97,7 +97,8 @@ void utils::saveCvMatToImg(const cv::Mat mat, const std::string &filename, int m
     // multiply every pixel by a multiplier
     // this is because CV expects values from 0-255
     LOG(DEBUG) << "Converting mat...";
-    mat.convertTo(mat, CV_32FC1, multiplier);
+    LOG(DEBUG) << "Multiplier: " << multiplier;
+    mat.convertTo(mat, CV_32FC1, multiplier * 255);
     if (cv::imwrite(filename, mat)) {
         LOG(DEBUG) << "Saved image to: " << filename;
     } else {
@@ -207,11 +208,39 @@ void utils::addDirichletNoise(Node* root, float alpha) {
     for (int i = 0; i < children.size(); i++) {
         children[i]->setPrior(children[i]->getPrior() * (1 - frac) + noise[i] * frac);
     }
+}
 
+std::string utils::getDirectoryFromFilename(std::string filename){
+    if (filename.find_last_of("/") == std::string::npos) {
+        return "";
+    }
+    return filename.substr(0, filename.find_last_of("/"));
 }
 
 bool utils::createDirectory(std::string path){
     return std::filesystem::create_directories(path);
+}
+
+void utils::writeLossToCSV(std::string filename, LossHistory &lossHistory){
+    if (!filename.ends_with(".csv")) {
+        filename += ".csv";
+    }
+    // check if filename is in subdirectory
+    std::string dir;
+    if (!(dir = utils::getDirectoryFromFilename(filename)).empty()) {
+        // if it is, create the directory to be sure
+        createDirectory(dir);
+    }
+    LOG(INFO) << "Saving loss history to " << filename;
+    std::ofstream file;
+    file.open(filename);
+    // header
+    file << "Epoch;Policy Loss;Value Loss;Total Loss" << std::endl;
+    for (int i = 0; i < lossHistory.historySize; i++) {
+        file << i << ";" << lossHistory.policies[i] << ";" << lossHistory.values[i] << ";" << lossHistory.losses[i] << "\n";
+    }
+    file << "\n";
+    file.close();
 }
 
 void utils::test_Dirichlet(){
@@ -273,7 +302,11 @@ void utils::test_NN(std::string networkPath){
     LOG(DEBUG) << "Converting output to image";
 	cv::Mat img = utils::tensorToMat(policyOutput.clone(), 73*8, 8);
 	LOG(DEBUG) << "image: " << img.size();
-	utils::saveCvMatToImg(img, "tests/output.png", 255);
+
+    // calculate the appropriate multiplier
+    float max_value = torch::max(policyOutput).item<float>();
+    LOG(DEBUG) << "max_value: " << max_value;
+	utils::saveCvMatToImg(img, "tests/output.png", 1.0/max_value);
 }
 
 void utils::test_Train(std::string networkPath){
@@ -293,7 +326,7 @@ void utils::test_Train(std::string networkPath){
 
 
 	// optimizer
-	int learning_rate = 0.2;
+	int learning_rate = 0.5;
 	torch::optim::Adam optimizer(nn.getNetwork()->parameters(), learning_rate);
     optimizer.zero_grad();
 

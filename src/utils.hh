@@ -37,7 +37,17 @@ std::vector<float> sampleFromGamma(float alpha, float scale, int size);
 
 void addDirichletNoise(Node* root, float alpha=0.3);
 
+std::string getDirectoryFromFilename(std::string filename);
+
 bool createDirectory(std::string path);
+
+void viewTensorFromFile(std::string filename);
+
+std::string getTimeString();
+
+void writeLossToCSV(std::string filename, LossHistory &lossHistory);
+
+/* Tests */
 
 void test_Dirichlet();
 
@@ -48,10 +58,6 @@ void test_NN(std::string networkPath);
 void test_Train(std::string networkPath);
 
 void testBug();
-
-void viewTensorFromFile(std::string filename);
-
-std::string getTimeString();
 
 } // namespace utils
 

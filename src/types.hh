@@ -29,4 +29,11 @@ struct MemoryElement {
 	int winner;
 };
 
-
+struct LossHistory {
+	int historySize = 0;
+	int batch_size = 0;
+	int data_size = 0;
+	std::vector<float> losses = std::vector<float>();
+	std::vector<float> values  = std::vector<float>();
+	std::vector<float> policies = std::vector<float>();
+};

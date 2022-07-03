@@ -5,6 +5,7 @@
 
 #include "neuralnet.hh"
 #include "utils.hh"
+#include "types.hh"
 #include "common.hh"
 
 #define INPUT_CHANNELS 119
@@ -106,6 +107,30 @@ std::tuple<torch::Tensor, torch::Tensor> NeuralNetwork::predict(torch::Tensor &i
     return this->neuralNet->forward(input);
 }
 
+std::tuple<torch::Tensor, torch::Tensor> loss_function(std::tuple<torch::Tensor, torch::Tensor> outputs, torch::Tensor target) {
+    torch::Tensor policy_output = std::get<0>(outputs);
+    torch::Tensor value_output = std::get<1>(outputs);
+
+    // divide policy and value targets
+    int size = policy_output.sizes()[0];
+    auto policy_target = target.slice(1, 0, 4672).view({size, 73, 8, 8});
+    auto value_target = target.slice(1, 4672, 4673).view({size, 1});
+    
+    if (!torch::nan_to_num(policy_output).equal(policy_output)){
+        LOG(WARNING) << policy_output;
+        LOG(WARNING) << "Policy output contains nans";
+        exit(EXIT_FAILURE);
+    }
+    policy_output = policy_output.view({size, 73, 8, 8});
+    value_output = value_output.view({size, 1});
+
+    // loss
+    torch::Tensor policy_loss = torch::cross_entropy_loss(policy_output, policy_target);
+    torch::Tensor value_loss = torch::mse_loss(value_output, value_target);
+
+    return std::make_tuple(policy_loss, value_loss);
+}
+
 void NeuralNetwork::trainBatches(ChessDataLoader &loader, torch::optim::Optimizer &optimizer, int data_size, int batch_size) {
     float Loss = 0, Acc = 0;
 
@@ -113,13 +138,21 @@ void NeuralNetwork::trainBatches(ChessDataLoader &loader, torch::optim::Optimize
     this->neuralNet->train();
     this->neuralNet->to(this->device);
 
+    LossHistory loss_history;
+    loss_history.batch_size = batch_size;
+    loss_history.data_size = data_size;
+
 	LOG(INFO) << "Starting training with " << data_size << " examples";
 	int index = 0;
 	for (auto batch : loader) {
+        if (!g_running) {
+            exit(EXIT_FAILURE);
+        }
+
+        optimizer.zero_grad();
 		int size = batch.data.sizes()[0];
-		LOG(INFO) << "Batch of size " << size;
-		auto data = batch.data.to(torch::kCUDA);
-		auto target = batch.target.to(torch::kCUDA);
+		auto input = batch.data.to(this->device);
+		auto target = batch.target.to(this->device);
 
         // check if policy_target contains nans
         if (!torch::nan_to_num(target).equal(target)){
@@ -127,32 +160,14 @@ void NeuralNetwork::trainBatches(ChessDataLoader &loader, torch::optim::Optimize
             LOG(WARNING) << "Target contains nans";
             exit(EXIT_FAILURE);
         }
+	
+        std::tuple<torch::Tensor, torch::Tensor> outputs = this->predict(input);
+		std::tuple<torch::Tensor, torch::Tensor> losses = loss_function(outputs, target);
 
-		// divide policy and value targets
-		auto policy_target = target.slice(1, 0, 4672).view({size, 73, 8, 8});
-		auto value_target = target.slice(1, 4672, 4673).view({size, 1});
-
-        std::tuple<torch::Tensor, torch::Tensor> outputs = this->predict(data);
-        torch::Tensor policy_output = std::get<0>(outputs);
-        torch::Tensor value_output = std::get<1>(outputs);
-        if (!torch::nan_to_num(policy_output).equal(policy_output)){
-            LOG(WARNING) << policy_output;
-            LOG(WARNING) << "Policy output contains nans";
-            exit(EXIT_FAILURE);
-        }
-		policy_output = policy_output.view({size, 73, 8, 8});
-		value_output = value_output.view({size, 1});
-
-		// loss
-		auto policy_loss = -(policy_output * policy_target);
-        policy_loss = policy_loss.sum(1).mean();
-		auto value_loss = torch::mse_loss(value_output, value_target);
+        torch::Tensor policy_loss = std::get<0>(losses);
+        torch::Tensor value_loss = std::get<1>(losses);
+        torch::Tensor loss = policy_loss + value_loss;
 		
-		LOG(INFO) << "Policy loss: " << policy_loss;
-		LOG(INFO) << "Value loss: " << value_loss;
-		auto loss = torch::add(policy_loss, value_loss);
-
-		optimizer.zero_grad();
 		loss.backward();
 		optimizer.step();
 
@@ -160,11 +175,25 @@ void NeuralNetwork::trainBatches(ChessDataLoader &loader, torch::optim::Optimize
 
 		// calculate average loss
 		auto end = std::min(data_size, (index + 1) * batch_size);
-		LOG(INFO) << "===================== Epoch: " << index << " => Loss: " << Loss / (end);
-		index += 1;
+		LOG(INFO) << "======== Epoch: " << index << ". Batch size: " << size << " => Loss: " << Loss / (end)
+            << ". Policy loss: " << policy_loss.item<float>() << ". Value loss: " << value_loss.item<float>() << " ========";
+
+        // add loss to history
+        loss_history.losses.push_back(loss.item<float>());
+        loss_history.policies.push_back(policy_loss.item<float>());
+        loss_history.values.push_back(value_loss.item<float>());
+        loss_history.historySize++;
+
+		index++;
 	}
 	LOG(INFO) << "Training finished";
 
-    // TODO: add timestamp
-    this->saveModel("", true);
+    std::string timeString = utils::getTimeString();
+    // save loss history to csv, to make graphs with
+    utils::writeLossToCSV("losses/history_" + timeString + ".csv", loss_history);
+    // save the trained model
+    this->saveModel("./models/model_" + timeString, true);
+
+    // set network back to evaluation mode
+    this->neuralNet->eval();
 }
