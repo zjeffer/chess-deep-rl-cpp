@@ -57,7 +57,8 @@ int strcmp_ignore(const char *s, const char *t) {
  *  License: MIT license. Full text of license is in associated file LICENSE
  *  Copyright 2010-2020, Bill Forster <billforsternz at gmail dot com>
  ****************************************************************************/
-#pragma once
+#ifndef PRIVATE_CHESS_DEFS_H_INCLUDED
+#define PRIVATE_CHESS_DEFS_H_INCLUDED
 
 // TripleHappyChess
 namespace thc {
@@ -95,7 +96,8 @@ inline Square &operator++(Square &sq) {
 #define NE(sq) ((Square)((sq)-7))                     // eg c5->d6
 
 // Utility macro
-#pragma once
+#ifndef nbrof
+#define nbrof(array) (sizeof((array)) / sizeof((array)[0]))
 #endif
 
 /* DETAIL is shorthand for the section of type ChessPosition that looks
