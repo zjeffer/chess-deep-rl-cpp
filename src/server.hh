@@ -1,5 +1,4 @@
-#ifndef server_hh
-#define server_hh
+#pragma once
 
 #include <netinet/in.h>
 #include <stdio.h>
@@ -16,5 +15,3 @@ class Server{
 
 
 };
-
-#endif /* server_hh */

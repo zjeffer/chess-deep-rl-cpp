@@ -1,5 +1,4 @@
-#ifndef ENVIRONMENT_HH
-#define ENVIRONMENT_HH
+#pragma once
 
 #include <array>
 #include <map>
@@ -66,4 +65,3 @@ class Environment {
 
 };
 
-#endif // ENVIRONMENT_HH

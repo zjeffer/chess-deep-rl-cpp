@@ -1,5 +1,4 @@
-#ifndef NEURALNET_HH
-#define NEURALNET_HH
+#pragma once
 
 #include "dataset.hh"
 #include "environment.hh"
@@ -43,4 +42,3 @@ class NeuralNetwork {
 
 };
 
-#endif // NEURALNET_HH

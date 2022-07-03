@@ -1,5 +1,4 @@
-#ifndef UTILS_HH
-#define UTILS_HH
+#pragma once
 
 #include <filesystem>
 #include <iostream>
@@ -56,4 +55,3 @@ std::string getTimeString();
 
 } // namespace utils
 
-#endif // UTILS_HH

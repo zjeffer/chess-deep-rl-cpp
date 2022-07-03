@@ -1,5 +1,4 @@
-#ifndef DATASET_HH
-#define DATASET_HH
+#pragma once
 
 #include <torch/torch.h>
 #include <torch/data.h>
@@ -25,5 +24,3 @@ class ChessDataSet : public torch::data::datasets::Dataset<ChessDataSet> {
 	std::vector<ChessData> data;
 
 };
-
-#endif // DATASET_HH

@@ -1,5 +1,4 @@
-#ifndef AGENT_HH
-#define AGENT_HH
+#pragma once
 
 #include "mcts.hh"
 #include "neuralnet.hh"
@@ -22,4 +21,3 @@ class Agent {
 		std::string name;
 };
 
-#endif // AGENT_HH

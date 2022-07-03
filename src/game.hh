@@ -1,5 +1,4 @@
-#ifndef GAME_HH
-#define GAME_HH
+#pragma once
 
 #include "agent.hh"
 #include "environment.hh"
@@ -115,4 +114,3 @@ class Game {
 	std::uniform_int_distribution<int> dist;
 };
 
-#endif // GAME_HH

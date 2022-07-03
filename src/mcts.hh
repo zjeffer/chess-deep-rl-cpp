@@ -1,5 +1,4 @@
-#ifndef MCTS_HH
-#define MCTS_HH
+#pragma once
 
 #include "neuralnet.hh"
 #include "node.hh"
@@ -29,5 +28,3 @@ class MCTS {
 
     NeuralNetwork *nn;
 };
-
-#endif /* MCTS_HH */

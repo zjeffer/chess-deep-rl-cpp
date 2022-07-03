@@ -1,5 +1,4 @@
-#ifndef node_hh
-#define node_hh
+#pragma once
 
 
 #include "chess/thc.hh"
@@ -61,5 +60,3 @@ private:
 };
 
 
-
-#endif /* node_hh */

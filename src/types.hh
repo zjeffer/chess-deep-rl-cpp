@@ -1,5 +1,4 @@
-#ifndef TYPES_HH
-#define TYPES_HH
+#pragma once
 
 #include <string>
 #include <vector>
@@ -31,4 +30,3 @@ struct MemoryElement {
 };
 
 
-#endif // TYPES_HH

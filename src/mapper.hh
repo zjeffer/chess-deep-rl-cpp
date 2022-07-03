@@ -1,5 +1,4 @@
-#ifndef mapper_hh
-#define mapper_hh
+#pragma once
 
 #include <map>
 #include <tuple>
@@ -47,4 +46,3 @@ class Mapper {
 
 };
 
-#endif // mapper_hh
