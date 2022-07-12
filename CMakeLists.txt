@@ -1,13 +1,19 @@
 cmake_minimum_required(VERSION 3.23 FATAL_ERROR)
 
 ######### MAIN PROJECT #########
-project(chess-rl VERSION 1.0.0)
+project(chess-rl VERSION 1.0)
+
+##### QT ######
+find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
+qt_standard_project_setup()
+message(STATUS "QT library status:")
+message(STATUS "    QT_VERSION: ${QT_VERSION}")
 
 ###### OpenCV ######
 find_package(OpenCV REQUIRED)
 message(STATUS "OpenCV library status:")
 message(STATUS "    version: ${OpenCV_VERSION}")
-message(STATUS "    libraries: ${OpenCV_LIBS}")
 message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 
 ###### LibTorch ######
@@ -29,24 +35,33 @@ message(
 )
 include_directories(${G3LOG_INCLUDE_DIRS})
 
-###### main files ######
-file (GLOB SOURCE_FILES 
-  ${PROJECT_SOURCE_DIR}/src/*.cc
-  ${PROJECT_SOURCE_DIR}/src/*.hh
-  ${PROJECT_SOURCE_DIR}/src/chess/*.cc
-  ${PROJECT_SOURCE_DIR}/src/chess/*.hh
-  ${PROJECT_SOURCE_DIR}/src/logger/*.cc
-  ${PROJECT_SOURCE_DIR}/src/logger/*.hh
-  ${PROJECT_SOURCE_DIR}/src/neuralNetwork/*.hh
-)
-
 ####### csv parsing ######
 include_directories("${PROJECT_SOURCE_DIR}/vendor/csv")
 
-# create executable
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
-# link libraries (opencv, torch, g3log)
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} "${TORCH_LIBRARIES}" g3log)
+###### main files ######
+file (GLOB PROJECT_SOURCES 
+    ${PROJECT_SOURCE_DIR}/src/*.cc
+    ${PROJECT_SOURCE_DIR}/src/*.hh
+    ${PROJECT_SOURCE_DIR}/src/chess/*.cc
+    ${PROJECT_SOURCE_DIR}/src/chess/*.hh
+    ${PROJECT_SOURCE_DIR}/src/logger/*.cc
+    ${PROJECT_SOURCE_DIR}/src/logger/*.hh
+    ${PROJECT_SOURCE_DIR}/src/neuralNetwork/*.cc
+    ${PROJECT_SOURCE_DIR}/src/neuralNetwork/*.hh
+    ${PROJECT_SOURCE_DIR}/src/ui/*.cc
+    ${PROJECT_SOURCE_DIR}/src/ui/*.hh
+    ${PROJECT_SOURCE_DIR}/src/ui/*.ui
+)
+
+add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+
+# link libraries (opencv, torch, g3log, qt)
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${TORCH_LIBRARIES} g3log Qt6::Widgets)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    WIN32_EXECUTABLE ON
+    MACOSX_BUNDLE ON
+)
 
 # fix libgomp error
 add_library(libgomp SHARED IMPORTED)

@@ -1,6 +1,17 @@
+#undef slots
+#include "torch/torch.h"
+#include "torch/jit.h"
+#include "torch/nn.h"
+#include "torch/script.h"
+#define slots Q_SLOTS
+
 #include <iostream>
 #include <signal.h>
 #include <opencv2/opencv.hpp>
+
+#include "ui/mainwindow.hh"
+#include <QApplication>
+#include <thread>
 
 #include "environment.hh"
 #include "mcts.hh"
@@ -98,6 +109,10 @@ int main(int argc, char** argv) {
 		}
 	}
 
+	QApplication a(argc, argv);
+    MainWindow w;
+    w.show();
+
 	// test mcts simulations:
 	// utils::test_MCTS();
 
@@ -105,7 +120,7 @@ int main(int argc, char** argv) {
 	// utils::test_NN("models/model_2022-07-03_13-43-24_trained.pt");
 
 	// try training
-	utils::test_Train("models/model.pt");
+	// utils::test_Train("models/model.pt");
 
 	// play chess
 	// playContinuously("models/model.pt", amount_of_sims, parallel_games);
@@ -121,8 +136,12 @@ int main(int argc, char** argv) {
 	// test mate in 4 position (advanced)
 	// playPosition("3q1rk1/6n1/p2P1pPQ/1p5p/1P5P/5p1b/P4P2/3R1KR1 w - - 1 35", amount_of_sims);
 
+	
+
+    int return_code = a.exec();
+
 	logger->destroy();
 	logger.reset();
 
-	return 0;
+	return return_code;
 }

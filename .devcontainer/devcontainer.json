@@ -25,12 +25,17 @@
 	"remoteUser": "user",
 
 	"mounts": [
+		// x display passthrough
+		"source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
 		// training data mount
 		"source=${localWorkspaceFolder}/memory,target=/app/memory,type=bind,consistency=cached",
 		// models mount
 		"source=${localWorkspaceFolder}/models,target=/app/models,type=bind,consistency=cached"
 	],
 
+	"containerEnv": {
+        "DISPLAY": "unix:0"
+    },
 	// gpu passthrough
 	"runArgs": [
 		"--gpus=all",
