@@ -3,8 +3,14 @@
 #include <filesystem>
 #include <iostream>
 #include <opencv2/opencv.hpp>
-#include <torch/csrc/api/include/torch/torch.h>
+
+#undef slots
 #include <torch/torch.h>
+#include <torch/jit.h>
+#include <torch/nn.h>
+#include <torch/script.h>
+#define slots Q_SLOTS
+
 #include <tuple>
 #include <vector>
 

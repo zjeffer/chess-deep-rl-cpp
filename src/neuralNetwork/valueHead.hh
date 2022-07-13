@@ -1,7 +1,12 @@
 #pragma once
 
+
+#undef slots
 #include <torch/torch.h>
-#include <torch/nn/module.h>
+#include <torch/jit.h>
+#include <torch/nn.h>
+#include <torch/script.h>
+#define slots Q_SLOTS
 
 struct ValueHeadImpl : public torch::nn::Module {
     ValueHeadImpl(int inputFilters, int valueFilters, int width, int height, int linearNeurons) {

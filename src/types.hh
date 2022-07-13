@@ -2,8 +2,6 @@
 
 #include <string>
 #include <vector>
-#include <torch/csrc/api/include/torch/torch.h>
-#include <torch/torch.h>
 #include "chess/thc.hh"
 
 /**

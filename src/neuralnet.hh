@@ -5,7 +5,6 @@
 #include "neuralNetwork/network.hh"
 
 #include <array>
-#include <torch/torch.h>
 #include <vector>
 
 

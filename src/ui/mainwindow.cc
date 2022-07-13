@@ -1,10 +1,10 @@
-#include "mainwindow.hh"
-#include "./ui_mainwindow.h"
-#include "../common.hh"
 #include <iostream>
-
 #include <QFileDialog>
 
+#include "mainwindow.hh"
+#include "./ui_mainwindow.h"
+#include "../selfplay.hh"
+#include "../common.hh"
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
 	ui->setupUi(this);
@@ -80,6 +80,8 @@ void MainWindow::on_startSelfPlay_clicked(){
 		// stop selfplay
 		ui->Button_Start->setText("Start self-play");
 		this->print("Stopping selfplay");
+
+		// TODO: stop selfplay thread
 	} else {
 		if (ui->Input_setDataFolder->text().length() == 0){
 			this->print("Error: Data folder not set!");
@@ -91,11 +93,19 @@ void MainWindow::on_startSelfPlay_clicked(){
 		}
 		ui->Button_Start->setText("Stop self-play");
 		this->print("Starting selfplay...");
+
+		// start selfplay in new thread
+		std::thread thread_selfplay = std::thread(
+			&SelfPlay::playContinuously,
+			ui->Input_setModel->text().toStdString(), // model path
+			400, // amount of sims per move
+			1 // amount of parallel games
+		);
+		thread_selfplay.detach();
 	}
 
 	is_selfPlaying = !is_selfPlaying;
 }
-
 
 
 

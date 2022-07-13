@@ -1,7 +1,12 @@
 #pragma once
 
+
+#undef slots
 #include <torch/torch.h>
-#include <torch/data.h>
+#include <torch/jit.h>
+#include <torch/nn.h>
+#include <torch/script.h>
+#define slots Q_SLOTS
 
 #include "types.hh"
 #include "common.hh"
