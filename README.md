@@ -11,7 +11,7 @@ C++ version of my [chess-deep-rl](https://github.com/zjeffer/chess-deep-rl) proj
 - [X] Continuously self-play games with specific model
 - [X] Save self-play data on disk
 - [ ] Fix training (loss doesn't drop, maybe loss calculation is wrong?)
-- [ ] Qt GUI for self-play
+- [X] Qt GUI for self-play
 - [ ] Human vs computer (with GUI)
 - [ ] Multithreaded MCTS
 - [ ] Parallel self-play
