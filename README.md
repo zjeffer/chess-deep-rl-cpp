@@ -11,8 +11,23 @@ C++ version of my [chess-deep-rl](https://github.com/zjeffer/chess-deep-rl) proj
 - [X] Continuously self-play games with specific model
 - [X] Save self-play data on disk
 - [ ] Fix training (loss doesn't drop, maybe loss calculation is wrong?)
-- [ ] Qt GUI for self-play
+- [X] Qt GUI for self-play
 - [ ] Human vs computer (with GUI)
 - [ ] Multithreaded MCTS
-- [ ] Parallel self-play
-- [ ] Kubernetes cluster of self-play clients
+- [X] Parallel self-play
+- [ ] Parallel self-play over network (one server with GPU, multiple clients that send inputs to the server)
+- [ ] Kubernetes cluster of server & self-play clients
+
+## Usage
+
+1) Build and open the devcontainer. 
+
+2) It is necessary to run the following command on the host system to give the container access to the X11 display:
+
+```bash
+xhost +
+```
+
+Example of the GUI running self-play with 2 games in parallel:
+
+![Self-play GUI](img/selfplay-gui.png "Self-play GUI")

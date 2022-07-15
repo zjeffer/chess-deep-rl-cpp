@@ -13,16 +13,17 @@
 #include <QApplication>
 #include <thread>
 
-#include "environment.hh"
-#include "mcts.hh"
-#include "game.hh"
-#include "neuralnet.hh"
-#include "utils.hh"
 #include "common.hh"
+
+MainWindow* g_mainWindow = nullptr;
 
 void signal_handling(int signal) {
 	LOG(INFO) << "Signal " << signal << " received. Quitting...";
 	g_running = false;
+
+	if (g_mainWindow != nullptr) {
+		g_mainWindow->close();
+	}
 }
 
 
@@ -30,8 +31,6 @@ int main(int argc, char** argv) {
 	// signal handling
 	signal(SIGINT, signal_handling);
 	signal(SIGTERM, signal_handling);
-
-	auto logger = std::make_unique<Logger>();
 
 	// set random seed
 	g_generator.seed(std::random_device{}());
@@ -52,8 +51,8 @@ int main(int argc, char** argv) {
 	}
 
 	QApplication a(argc, argv);
-    MainWindow w;
-    w.show();
+    g_mainWindow = new MainWindow();
+    g_mainWindow->show();
 
 	// test mcts simulations:
 	// utils::test_MCTS();

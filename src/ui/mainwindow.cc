@@ -29,11 +29,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 }
 
 void MainWindow::print(const std::string &text) {
-	std::cout << text << std::endl;
+	LOG(INFO) << text;
 	this->m_console->putData(text.c_str());
 }
 
 MainWindow::~MainWindow() { 
+	if (g_isSelfPlaying){
+		stopSelfPlay();
+	}
 	g_running = false;
 	delete ui;
 }
@@ -76,13 +79,10 @@ void MainWindow::on_setDataFolder_clicked() {
 
 void MainWindow::on_startSelfPlay_clicked(){
 	// TODO: start & stop selfplay
-	if (is_selfPlaying) {
-		// stop selfplay
-		ui->Button_Start->setText("Start self-play");
-		this->print("Stopping selfplay");
-
-		// TODO: stop selfplay thread
+	if (g_isSelfPlaying) {
+		stopSelfPlay();
 	} else {
+		// check inputs
 		if (ui->Input_setDataFolder->text().length() == 0){
 			this->print("Error: Data folder not set!");
 			return;
@@ -91,33 +91,39 @@ void MainWindow::on_startSelfPlay_clicked(){
 			this->print("Error: Model file not set!");
 			return;
 		}
-		ui->Button_Start->setText("Stop self-play");
-		this->print("Starting selfplay...");
+		startSelfPlay();
+	}
+}
 
-		// start selfplay in new thread
+void MainWindow::stopSelfPlay() {
+	ui->Button_Start->setText("Start self-play");
+	g_isSelfPlaying = false;
+
+	this->print("Stopped selfplay.");
+	// delete nn;
+}
+
+void MainWindow::startSelfPlay() {
+	ui->Button_Start->setText("Stop self-play");
+	this->print("Starting selfplay with " + ui->SpinBox_Threads->text().toStdString() + " threads, and " + ui->SpinBox_Sims->text().toStdString() + "simulations/move...");
+
+	// start selfplay
+	g_isSelfPlaying = true;
+
+	nn = new NeuralNetwork(ui->Input_setModel->text().toStdString(), ui->RButton_CPU->isChecked());
+
+	for (int t = 0; t < ui->SpinBox_Threads->value(); t++) {
 		std::thread thread_selfplay = std::thread(
 			&SelfPlay::playContinuously,
-			ui->Input_setModel->text().toStdString(), // model path
+			nn, // model
 			400, // amount of sims per move
 			1 // amount of parallel games
 		);
 		thread_selfplay.detach();
 	}
-
-	is_selfPlaying = !is_selfPlaying;
+	
+	
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

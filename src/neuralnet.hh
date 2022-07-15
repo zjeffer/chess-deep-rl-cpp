@@ -7,7 +7,6 @@
 #include <array>
 #include <vector>
 
-
 using ChessDataLoader = torch::data::StatelessDataLoader<
 	torch::data::datasets::MapDataset<
 		ChessDataSet, 

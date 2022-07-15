@@ -2,12 +2,14 @@
 
 #include <QMainWindow>
 #include <string>
+#include "../neuralnet.hh"
 #include "console.hh"
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
-    class MainWindow;
-}
+	class MainWindow;
+} // namespace Ui
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -24,11 +26,13 @@ public:
 	void on_setDataFolder_clicked();
 	void on_startSelfPlay_clicked();
 
+	void startSelfPlay();
+	void stopSelfPlay();
+
 private:
 	Ui::MainWindow *ui;
-
 	Console* m_console;
 
-	bool is_selfPlaying = false;
-
+	NeuralNetwork* nn;
 };
+

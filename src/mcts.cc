@@ -3,11 +3,8 @@
 #include <iostream>
 #include <tuple>
 
-#include "chess/thc.hh"
 #include "mcts.hh"
-#include "tqdm.h"
-#include "utils.hh"
-#include "common.hh"
+
 
 MCTS::MCTS(Node* root, NeuralNetwork* nn) {
 	this->root = root;
@@ -28,7 +25,7 @@ void MCTS::run_simulations(int num_simulations) {
 
 
 	tqdm bar;
-	for (int i = 0; i < num_simulations && g_running; i++) {
+	for (int i = 0; i < num_simulations && g_running && g_isSelfPlaying; i++) {
 		bar.progress(i, num_simulations);
 		// selection
 		Node* leaf = select(this->root);

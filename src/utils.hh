@@ -19,7 +19,6 @@
 #include "mapper.hh"
 #include "environment.hh"
 #include "mcts.hh"
-#include "game.hh"
 #include "utils.hh"
 #include "common.hh"
 

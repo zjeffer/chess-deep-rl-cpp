@@ -1,8 +1,5 @@
 #include "game.hh"
-#include "node.hh"
-#include "dataset.hh"
-#include "utils.hh"
-#include "common.hh"
+
 
 Game::Game(int simulations, Environment& env, Agent* white, Agent* black) {
 	this->simulations = simulations;
@@ -38,7 +35,7 @@ int Game::playGame(bool stochastic) {
 	int winner = 0;
 	int counter = 0;
 	thc::DRAWTYPE drawType;
-	while (!this->env.isGameOver() && g_running) {
+	while (!this->env.isGameOver() && g_running && g_isSelfPlaying) {
 		this->env.printBoard();
 		
 		this->playMove();
@@ -67,6 +64,10 @@ int Game::playGame(bool stochastic) {
 		} else if(this->env.terminalState == thc::TERMINAL_WCHECKMATE) {
 			winner = -1;
 		}
+	}
+
+	if (!g_isSelfPlaying) {
+		return winner;
 	}
 
 	// only save wins

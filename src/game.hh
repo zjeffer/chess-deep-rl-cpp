@@ -1,9 +1,12 @@
 #pragma once
 
+#include <random>
 #include "agent.hh"
 #include "environment.hh"
 #include "chess/thc.hh"
-#include <random>
+#include "node.hh"
+#include "utils.hh"
+#include "common.hh"
 
 #define MAX_MOVES 1000
 

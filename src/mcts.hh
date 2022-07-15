@@ -3,7 +3,10 @@
 #include "neuralnet.hh"
 #include "node.hh"
 #include "environment.hh"
-#include "neuralnet.hh"
+#include "chess/thc.hh"
+#include "tqdm.h"
+#include "utils.hh"
+#include "common.hh"
 
 class MCTS {
   public:
