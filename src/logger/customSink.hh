@@ -18,10 +18,9 @@ enum LogColor {
 #define ADD_COLOR(color) "\x1b[" << int(color) << "m"
 #define RESET_COLOR "\x1b[" << int(LogColor::RESET) << "m"
 
-struct CustomSink {
-	void callback(g3::LogMessageMover log){
-		std::cout << log.get().toString(CustomSink::FormatMsg) << std::flush;
-	}
+class CustomSink {
+	public:
+	virtual void callback(g3::LogMessageMover log) = 0;
 
 	static LogColor getColor(const LEVELS level){
 		switch(level.value){
@@ -46,5 +45,20 @@ struct CustomSink {
 			<< msg.file() << ":" << msg.line() << "] "
 			<< RESET_COLOR;
 		return ss.str();
+	}
+};
+
+class StdoutSink : public CustomSink {
+	public:
+	void callback(g3::LogMessageMover log) override {
+		std::cout << log.get().toString(CustomSink::FormatMsg) << std::flush;
+	}
+};
+
+class QtConsoleSink : public CustomSink {
+	public:
+	void callback(g3::LogMessageMover log) override {
+		// TODO: implement way to send log to Qt console widget
+		
 	}
 };

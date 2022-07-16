@@ -17,6 +17,6 @@ class Logger {
 
   private:
     std::unique_ptr<g3::LogWorker> logWorker;
-    std::unique_ptr<CustomSink> customSink;
+    std::unique_ptr<StdoutSink> stdoutSink;
     void initialize();
 };

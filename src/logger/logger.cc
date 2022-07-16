@@ -17,8 +17,8 @@ void Logger::destroy(){
 
 void Logger::initialize() {
 	logWorker = g3::LogWorker::createLogWorker();
-	customSink = std::make_unique<CustomSink>();
-	logWorker->addSink(std::move(customSink), &CustomSink::callback);
+	stdoutSink = std::make_unique<StdoutSink>();
+	logWorker->addSink(std::move(stdoutSink), &StdoutSink::callback);
 
 	g3::initializeLogging(logWorker.get());
 }
