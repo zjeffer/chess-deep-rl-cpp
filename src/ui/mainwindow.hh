@@ -31,7 +31,7 @@ public:
 
 private:
 	Ui::MainWindow *ui;
-	Console* m_console;
+	Console* m_Console;
 
 	NeuralNetwork* nn;
 };

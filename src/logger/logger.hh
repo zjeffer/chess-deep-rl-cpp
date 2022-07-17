@@ -8,9 +8,11 @@
 
 #include "customSink.hh"
 
+class MainWindow;
+
 class Logger {
   public:
-    Logger();
+    Logger(MainWindow* mainWindow);
     ~Logger();
 
     void destroy();
@@ -18,5 +20,5 @@ class Logger {
   private:
     std::unique_ptr<g3::LogWorker> logWorker;
     std::unique_ptr<StdoutSink> stdoutSink;
-    void initialize();
+    std::unique_ptr<QtConsoleSink> qtConsoleSink;
 };

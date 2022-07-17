@@ -1,12 +1,13 @@
 #include "selfplay.hh"
+#include "ui/mainwindow.hh"
 
-int SelfPlay::playGame(int amount_of_sims, Agent* white, Agent* black){
+int SelfPlay::playGame(int amount_of_sims, Agent* white, Agent* black, MainWindow* mainWindow){
 	Environment env = Environment();
-	Game game = Game(amount_of_sims, env, white, black);
+	Game game = Game(amount_of_sims, &env, white, black, mainWindow);
 	return game.playGame();	
 }
 
-void SelfPlay::playContinuously(NeuralNetwork* nn, int amount_of_sims, int parallel_games) {
+void SelfPlay::playContinuously(NeuralNetwork* nn, int amount_of_sims, int parallel_games, MainWindow* mainWindow) {
     struct Winners {
         int white = 0;
         int black = 0;
@@ -19,7 +20,7 @@ void SelfPlay::playContinuously(NeuralNetwork* nn, int amount_of_sims, int paral
         Agent *white = new Agent("white", nn);
         Agent *black = new Agent("black", nn);
 
-        int winner = playGame(amount_of_sims, white, black);
+        int winner = playGame(amount_of_sims, white, black, mainWindow);
         std::cout << "\n\n\n";
 
         if (!g_isSelfPlaying) {
@@ -44,7 +45,7 @@ void SelfPlay::playContinuously(NeuralNetwork* nn, int amount_of_sims, int paral
     }
 }
 
-void SelfPlay::playPosition(std::string fen, int amount_of_sims){
+void SelfPlay::playPosition(std::string fen, int amount_of_sims, MainWindow* mainWindow){
 	std::cout << "Creating environment with position: " << fen << std::endl;
 	Environment env = Environment(fen);
 	std::cout << "Creating NN" << std::endl;
@@ -52,7 +53,7 @@ void SelfPlay::playPosition(std::string fen, int amount_of_sims){
 	Agent* white = new Agent("white", nn);
 	Agent* black = new Agent("black", nn);
 	std::cout << "Creating game" << std::endl;
-	Game game = Game(amount_of_sims, env, white, black);
+	Game game = Game(amount_of_sims, &env, white, black, mainWindow);
 	game.getEnvironment()->printBoard();
 	game.playMove();
 }

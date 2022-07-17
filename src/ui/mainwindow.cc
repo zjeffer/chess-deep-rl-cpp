@@ -9,9 +9,16 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
 	ui->setupUi(this);
 
+	// init logger
+	logger = std::make_unique<Logger>(this);
+
+	// set random seed
+	g_generator.seed(std::random_device{}());
+	LOG(DEBUG) << "Test random value: " << g_generator();
+
 	QVBoxLayout* mainBox = ui->VBox_Main;
-	m_console = new Console(this);
-	mainBox->insertWidget(-1, m_console);
+	m_Console = new Console(this);
+	mainBox->insertWidget(-1, m_Console);
 
 	this->print("Loaded console");
 
@@ -30,7 +37,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 void MainWindow::print(const std::string &text) {
 	LOG(INFO) << text;
-	this->m_console->putData(text.c_str());
+	this->m_Console->putData(text.c_str());
 }
 
 MainWindow::~MainWindow() { 
@@ -39,6 +46,12 @@ MainWindow::~MainWindow() {
 	}
 	g_running = false;
 	delete ui;
+	if (m_Console != nullptr) {
+		delete m_Console;
+	}
+	if (nn != nullptr) {
+		delete nn;
+	}
 }
 
 
@@ -100,7 +113,6 @@ void MainWindow::stopSelfPlay() {
 	g_isSelfPlaying = false;
 
 	this->print("Stopped selfplay.");
-	// delete nn;
 }
 
 void MainWindow::startSelfPlay() {
@@ -117,7 +129,8 @@ void MainWindow::startSelfPlay() {
 			&SelfPlay::playContinuously,
 			nn, // model
 			400, // amount of sims per move
-			1 // amount of parallel games
+			1, // amount of parallel games
+			this
 		);
 		thread_selfplay.detach();
 	}

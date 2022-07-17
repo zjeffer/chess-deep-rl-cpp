@@ -5,12 +5,14 @@
 #include "game.hh"
 #include "common.hh"
 
+class MainWindow;
+
 namespace SelfPlay {
 
-int playGame(int amount_of_sims, Agent* white, Agent* black);
+int playGame(int amount_of_sims, Agent* white, Agent* black, MainWindow* mainWindow);
 
-void playContinuously(NeuralNetwork* nn, int amount_of_sims, int parallel_games);
+void playContinuously(NeuralNetwork* nn, int amount_of_sims, int parallel_games, MainWindow* mainWindow);
 
-void playPosition(std::string fen, int amount_of_sims);
+void playPosition(std::string fen, int amount_of_sims, MainWindow* mainWindow);
 
 } // namespace SelfPlay

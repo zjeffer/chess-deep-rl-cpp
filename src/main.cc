@@ -23,6 +23,7 @@ void signal_handling(int signal) {
 
 	if (g_mainWindow != nullptr) {
 		g_mainWindow->close();
+		delete g_mainWindow;
 	}
 }
 
@@ -32,9 +33,6 @@ int main(int argc, char** argv) {
 	signal(SIGINT, signal_handling);
 	signal(SIGTERM, signal_handling);
 
-	// set random seed
-	g_generator.seed(std::random_device{}());
-	LOG(DEBUG) << "Test random value: " << g_generator();
 
 	int amount_of_sims = 50;
 	int parallel_games = 1;
@@ -45,7 +43,7 @@ int main(int argc, char** argv) {
 				parallel_games = std::stoi(argv[2]);
 			}
 		} catch (std::invalid_argument) {
-			LOG(FATAL) << "Invalid argument";
+			std::cout << "Invalid argument" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -79,8 +77,7 @@ int main(int argc, char** argv) {
 
     int return_code = a.exec();
 
-	logger->destroy();
-	logger.reset();
+	delete g_mainWindow;
 
 	return return_code;
 }

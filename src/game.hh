@@ -10,6 +10,7 @@
 
 #define MAX_MOVES 1000
 
+class MainWindow;
 
 class Game {
   public:
@@ -21,7 +22,7 @@ class Game {
 	 * @param white 
 	 * @param black 
 	 */
-    Game(int simulations, Environment& env, Agent* white, Agent* black);
+    Game(int simulations, Environment* env, Agent* white, Agent* black, MainWindow* mainWindow);
 
 	/**
 	 * @brief Play one game. Returns the winner.
@@ -97,11 +98,13 @@ class Game {
 	bool stochastic = true;
 
 	// the environment the agents will interact with
-	Environment env;
+	Environment* env;
 	
 	// the agent that will interact with the environment
 	Agent* white;
 	Agent* black;
+
+	MainWindow* mainWindow;
 
 	// the pair of previous moves played
 	thc::Move *previous_moves;

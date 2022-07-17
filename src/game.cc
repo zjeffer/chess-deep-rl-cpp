@@ -1,16 +1,18 @@
 #include "game.hh"
+#include "ui/mainwindow.hh"
 
 
-Game::Game(int simulations, Environment& env, Agent* white, Agent* black) {
+Game::Game(int simulations, Environment* env, Agent* white, Agent* black, MainWindow* mainWindow) {
 	this->simulations = simulations;
 	this->env = env;
 	this->white = white;
 	this->black = black;
+	this->mainWindow = mainWindow;
 
-	if(env.getCurrentPlayer()){
-		this->white->updateMCTS(new Node(env.getFen(), nullptr, thc::Move(), 0.0));
+	if(env->getCurrentPlayer()){
+		this->white->updateMCTS(new Node(env->getFen(), nullptr, thc::Move(), 0.0));
 	} else {
-		this->black->updateMCTS(new Node(env.getFen(), nullptr, thc::Move(), 0.0));
+		this->black->updateMCTS(new Node(env->getFen(), nullptr, thc::Move(), 0.0));
 	}
 
 	this->previous_moves = new thc::Move[2];
@@ -26,7 +28,7 @@ Game::Game(int simulations, Environment& env, Agent* white, Agent* black) {
 }
 
 void Game::reset() {
-	this->env.reset();
+	this->env->reset();
 	this->memory.clear();
 }
 
@@ -35,8 +37,8 @@ int Game::playGame(bool stochastic) {
 	int winner = 0;
 	int counter = 0;
 	thc::DRAWTYPE drawType;
-	while (!this->env.isGameOver() && g_running && g_isSelfPlaying) {
-		this->env.printBoard();
+	while (!this->env->isGameOver() && g_running && g_isSelfPlaying) {
+		this->env->printBoard();
 		
 		this->playMove();
 		LOG(INFO) << "Value according to white: " << this->white->getMCTS()->getRoot()->getQ();
@@ -48,8 +50,8 @@ int Game::playGame(bool stochastic) {
 			break;
 		} 
 		
-		if (this->env.getRules()->IsDraw(this->env.getCurrentPlayer(), drawType)){
-			this->env.printDrawType(drawType);
+		if (this->env->getRules()->IsDraw(this->env->getCurrentPlayer(), drawType)){
+			this->env->printDrawType(drawType);
 			break;
 		}
 	}
@@ -58,10 +60,10 @@ int Game::playGame(bool stochastic) {
 		exit(EXIT_SUCCESS);
 	}
 
-	if (this->env.isGameOver()){
-		if (this->env.terminalState == thc::TERMINAL_BCHECKMATE){
+	if (this->env->isGameOver()){
+		if (this->env->terminalState == thc::TERMINAL_BCHECKMATE){
 			winner = 1;
-		} else if(this->env.terminalState == thc::TERMINAL_WCHECKMATE) {
+		} else if(this->env->terminalState == thc::TERMINAL_WCHECKMATE) {
 			winner = -1;
 		}
 	}
@@ -84,12 +86,12 @@ int Game::playGame(bool stochastic) {
 }
 
 void Game::playMove(){
-	Agent* currentPlayer = this->env.getCurrentPlayer() ? this->white : this->black;
+	Agent* currentPlayer = this->env->getCurrentPlayer() ? this->white : this->black;
 	LOG(INFO) << "Current player: " << currentPlayer->getName();	
 
 	// update mcts tree
 	// TODO: use subtree of previously chosen move as next root
-	currentPlayer->getMCTS()->setRoot(new Node(this->env.getFen(), nullptr, thc::Move(), 0.0));
+	currentPlayer->getMCTS()->setRoot(new Node(this->env->getFen(), nullptr, thc::Move(), 0.0));
 
 	// run the sims
 	currentPlayer->getMCTS()->run_simulations(this->simulations);
@@ -99,7 +101,7 @@ void Game::playMove(){
 
 	// create memory element
 	MemoryElement element;
-	element.state = this->env.getFen();
+	element.state = this->env->getFen();
 	element.probs = currentPlayer->getMCTS()->getRoot()->getProbs();
 	element.winner= 0;
 
@@ -112,13 +114,13 @@ void Game::playMove(){
 	}
 
 	// print moves
-	LOG(DEBUG) << "Moves: ";
+	/* LOG(DEBUG) << "Moves: ";
 	for (int i = 0; i < childNodes.size(); i++) {
 		thc::Move move = childNodes[i]->getAction();
-		LOG(DEBUG) << "Move " << i << ": " << move.NaturalOut(this->env.getRules())
+		LOG(DEBUG) << "Move " << i << ": " << move.NaturalOut(this->env->getRules())
 			<< " " << childNodes[i]->getVisitCount() << " visits. " 
 			<< "PUCT score: " << childNodes[i]->getQ() << " + " << childNodes[i]->getUCB() << ". Prior: " << childNodes[i]->getPrior();
-	}
+	} */
 	
 	thc::Move bestMove;
 	if (this->stochastic){
@@ -133,8 +135,8 @@ void Game::playMove(){
 		exit(EXIT_FAILURE);
 	}	
 
-	LOG(DEBUG) << this->env.getFen();
-	LOG(INFO) << "Chosen move: " << this->env.getRules()->full_move_count << ". " << bestMove.NaturalOut(this->env.getRules());
+	LOG(DEBUG) << this->env->getFen();
+	LOG(INFO) << "Chosen move: " << this->env->getRules()->full_move_count << ". " << bestMove.NaturalOut(this->env->getRules());
 	
 	// update previous moves
 	this->previous_moves[0] = this->previous_moves[1];
@@ -142,12 +144,12 @@ void Game::playMove(){
 
 	// LOG(DEBUG) << "Current prevmoves: " << this->previous_moves[0].src << "-" << this->previous_moves[0].dst << " and " << this->previous_moves[1].src << "-" << this->previous_moves[1].dst;
 
-	this->env.makeMove(bestMove);
+	this->env->makeMove(bestMove);
 	thc::ILLEGAL_REASON reason;
-	if (!this->env.getRules()->IsLegal(reason)){
+	if (!this->env->getRules()->IsLegal(reason)){
 		LOG(WARNING) << "Reached an illegal position after the last move. Reason: " << reason;
-		this->env.printBoard();
-		LOG(DEBUG) << this->env.getFen();
+		this->env->printBoard();
+		LOG(DEBUG) << this->env->getFen();
 		LOG(DEBUG) << bestMove.src << "-" << bestMove.dst;
 		LOG(DEBUG) << bestMove.special;
 		exit(EXIT_FAILURE);
@@ -183,7 +185,7 @@ thc::Move Game::getBestMoveDeterministic(std::vector<MoveProb> &probs){
 }
 
 Environment* Game::getEnvironment(){
-	return &this->env;
+	return this->env;
 }
 
 void Game::saveToMemory(MemoryElement element) {
