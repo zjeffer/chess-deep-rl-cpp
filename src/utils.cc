@@ -245,7 +245,9 @@ void utils::writeLossToCSV(std::string filename, LossHistory &lossHistory){
 
 void utils::test_Dirichlet(){
     LOG(INFO) << "Testing Dirichlet...";
-    MCTS mcts = MCTS(new Node(), new NeuralNetwork());
+    std::shared_ptr<NeuralNetwork> nn = std::make_shared<NeuralNetwork>();
+
+    MCTS mcts = MCTS(new Node(), nn);
     mcts.run_simulations(400);
 }
 
@@ -254,7 +256,8 @@ void utils::test_MCTS(){
 	LOG(DEBUG) << env.getFen();
 
 	// test mcts tree
-	MCTS mcts = MCTS(new Node(), new NeuralNetwork());
+    std::shared_ptr<NeuralNetwork> network = std::make_shared<NeuralNetwork>();
+	MCTS mcts = MCTS(new Node(), network);
 
 	// run sims
 	mcts.run_simulations(400);

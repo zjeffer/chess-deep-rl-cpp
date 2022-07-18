@@ -22,6 +22,7 @@ using ChessDataLoader = torch::data::StatelessDataLoader<
 class NeuralNetwork {
   public:
     NeuralNetwork(std::string path = "", bool useCPU=false);
+	~NeuralNetwork();
 
     std::tuple<torch::Tensor, torch::Tensor> predict(torch::Tensor &input);
 

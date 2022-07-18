@@ -98,6 +98,10 @@ NeuralNetwork::NeuralNetwork(std::string path, bool useCPU) {
     LOG(DEBUG) << "Output successful";
 }
 
+NeuralNetwork::~NeuralNetwork() {
+    std::cout << "Deleting NeuralNetwork object..." << std::endl;
+}
+
 Network NeuralNetwork::getNetwork() {
     return this->neuralNet;
 }

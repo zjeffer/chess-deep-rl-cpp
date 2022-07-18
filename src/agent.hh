@@ -5,7 +5,7 @@
 
 class Agent {
 	public:
-		Agent(std::string name = "", NeuralNetwork* nn = new NeuralNetwork());
+		Agent(std::string name, const std::shared_ptr<NeuralNetwork> &nn);
 
 		MCTS* getMCTS();
 
@@ -16,7 +16,7 @@ class Agent {
 		void setName(std::string name);
 
 	private:
-		NeuralNetwork* nn;
+		std::shared_ptr<NeuralNetwork> nn;
 		MCTS* mcts;
 		std::string name;
 };

@@ -10,7 +10,7 @@
 
 class MCTS {
   public:
-    MCTS(Node *root, NeuralNetwork *nn);
+    MCTS(Node *root, const std::shared_ptr<NeuralNetwork> &nn);
     ~MCTS();
 
     void run_simulations(int num_simulations);
@@ -29,5 +29,5 @@ class MCTS {
   private:
     Node *root;
 
-    NeuralNetwork *nn;
+    std::shared_ptr<NeuralNetwork> nn;
 };

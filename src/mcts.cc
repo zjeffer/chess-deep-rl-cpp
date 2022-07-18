@@ -6,7 +6,7 @@
 #include "mcts.hh"
 
 
-MCTS::MCTS(Node* root, NeuralNetwork* nn) {
+MCTS::MCTS(Node* root, const std::shared_ptr<NeuralNetwork> &nn) {
 	this->root = root;
 	this->nn = nn;
 }

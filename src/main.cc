@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
 				parallel_games = std::stoi(argv[2]);
 			}
 		} catch (std::invalid_argument) {
-			std::cout << "Invalid argument" << std::endl;
+			std::cerr << "Invalid argument" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 	}

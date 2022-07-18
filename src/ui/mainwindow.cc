@@ -41,17 +41,13 @@ void MainWindow::print(const std::string &text) {
 }
 
 MainWindow::~MainWindow() { 
+	std::cout << "MainWindow destructor" << std::endl;
 	if (g_isSelfPlaying){
 		stopSelfPlay();
 	}
 	g_running = false;
+	delete m_Console;
 	delete ui;
-	if (m_Console != nullptr) {
-		delete m_Console;
-	}
-	if (nn != nullptr) {
-		delete nn;
-	}
 }
 
 
@@ -122,14 +118,13 @@ void MainWindow::startSelfPlay() {
 	// start selfplay
 	g_isSelfPlaying = true;
 
-	nn = new NeuralNetwork(ui->Input_setModel->text().toStdString(), ui->RButton_CPU->isChecked());
+	nn = std::make_shared<NeuralNetwork>(ui->Input_setModel->text().toStdString(), ui->RButton_CPU->isChecked());
 
 	for (int t = 0; t < ui->SpinBox_Threads->value(); t++) {
 		std::thread thread_selfplay = std::thread(
 			&SelfPlay::playContinuously,
 			nn, // model
-			400, // amount of sims per move
-			1, // amount of parallel games
+			ui->SpinBox_Sims->value(), // amount of sims per move
 			this
 		);
 		thread_selfplay.detach();

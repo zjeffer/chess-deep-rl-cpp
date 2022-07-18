@@ -33,6 +33,6 @@ private:
 	Ui::MainWindow *ui;
 	Console* m_Console;
 
-	NeuralNetwork* nn;
+	std::shared_ptr<NeuralNetwork> nn;
 };
 

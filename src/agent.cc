@@ -1,6 +1,6 @@
 #include "agent.hh"
 
-Agent::Agent(std::string name, NeuralNetwork* nn) {
+Agent::Agent(std::string name, const std::shared_ptr<NeuralNetwork> &nn) {
     this->name = name;
     this->nn = nn;
     this->mcts = new MCTS(new Node(), nn);
