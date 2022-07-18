@@ -6,7 +6,6 @@ QtConsoleSink::QtConsoleSink(MainWindow* window) {
 }
 
 void QtConsoleSink::callback(g3::LogMessageMover log) {
-	// TODO: implement way to send log to Qt console widget
 	m_Window->print(log.get().toString(&FormatMsg));
 }
 
