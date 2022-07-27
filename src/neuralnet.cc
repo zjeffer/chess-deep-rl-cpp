@@ -125,18 +125,19 @@ std::tuple<torch::Tensor, torch::Tensor> loss_function(std::tuple<torch::Tensor,
         LOG(WARNING) << "Policy output contains nans";
         exit(EXIT_FAILURE);
     }
+
     policy_output = policy_output.view({size, 73, 8, 8});
     value_output = value_output.view({size, 1});
 
     // loss
-    torch::Tensor policy_loss = torch::cross_entropy_loss(policy_output, policy_target);
+    torch::Tensor policy_loss = -torch::log_softmax(policy_output, 1).mul(policy_target).sum(1).mean();
     torch::Tensor value_loss = torch::mse_loss(value_output, value_target);
 
     return std::make_tuple(policy_loss, value_loss);
 }
 
 void NeuralNetwork::trainBatches(ChessDataLoader &loader, torch::optim::Optimizer &optimizer, int data_size, int batch_size) {
-    float Loss = 0, Acc = 0;
+    float Loss = 0;
 
     // enable training mode
     this->neuralNet->train();
@@ -175,9 +176,9 @@ void NeuralNetwork::trainBatches(ChessDataLoader &loader, torch::optim::Optimize
 		loss.backward();
 		optimizer.step();
 
-		Loss += loss.item<float>();
 
 		// calculate average loss
+		Loss += loss.item<float>();
 		auto end = std::min(data_size, (index + 1) * batch_size);
 		LOG(INFO) << "======== Epoch: " << index << ". Batch size: " << size << " => Loss: " << Loss / (end)
             << ". Policy loss: " << policy_loss.item<float>() << ". Value loss: " << value_loss.item<float>() << " ========";
