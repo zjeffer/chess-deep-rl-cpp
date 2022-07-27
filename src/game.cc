@@ -160,8 +160,8 @@ void Game::playMove(){
 thc::Move Game::getBestMoveStochastic(std::vector<MoveProb> &probs){
 	// TODO: add temperature control
 	float total_probability = 0;
-	for (int i = 0; i < (int)probs.size(); i++){
-		total_probability += probs[i].prob;
+	for (const auto& prob : probs){
+		total_probability += prob.prob;
 	}
 	float p = (this->dist(g_generator) / static_cast<float>(RAND_MAX)) * total_probability;
 	int index = 0;
@@ -193,19 +193,19 @@ void Game::saveToMemory(MemoryElement element) {
 }
 
 void Game::updateMemory(int winner){
-	for (int i = 0; i < (int)this->memory.size(); i++){
+	for (auto& element : this->memory){
 		if (winner == 0) {
-			this->memory[i].winner = 0;
+			element.winner = 0;
 			continue;
 		}
-		Environment env = Environment(this->memory[i].state);
+		Environment env = Environment(element.state);
 		bool winnerIsWhite = winner == 1;
 		if (env.getCurrentPlayer() == winnerIsWhite) {
 			// if winner is the current player, set value to 1
-			this->memory[i].winner = 1;
+			element.winner = 1;
 		} else {
 			// if winner is not current player, set value to -1
-			this->memory[i].winner = -1;
+			element.winner = -1;
 		}
 	}
 }
