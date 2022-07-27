@@ -13,6 +13,7 @@ class MainWindow;
 class Logger {
   public:
     Logger(MainWindow* mainWindow);
+    Logger();
     ~Logger();
 
     void destroy();
