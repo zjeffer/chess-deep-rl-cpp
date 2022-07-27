@@ -35,3 +35,11 @@ struct LossHistory {
 	std::vector<float> values  = std::vector<float>();
 	std::vector<float> policies = std::vector<float>();
 };
+
+
+struct SelfPlayOptions {
+	int amount_of_sims = 400;
+	std::string network_path = "";
+	std::string memory_path = "./memory/";
+	
+};
