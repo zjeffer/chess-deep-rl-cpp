@@ -29,7 +29,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	connect(ui->Button_Start, &QPushButton::clicked, this, &MainWindow::on_startSelfPlay_clicked);
 
 	// set input text
-	ui->Input_setDataFolder->setText(QDir::currentPath() + "/data/");
+	ui->Input_setDataFolder->setText(QDir::currentPath() + "/memory/");
 
 	connect(ui->actionExit, &QAction::triggered, this, &MainWindow::close);
 
@@ -87,7 +87,6 @@ void MainWindow::on_setDataFolder_clicked() {
 }
 
 void MainWindow::on_startSelfPlay_clicked(){
-	// TODO: start & stop selfplay
 	if (g_isSelfPlaying) {
 		stopSelfPlay();
 	} else {
@@ -118,6 +117,17 @@ void MainWindow::startSelfPlay() {
 	// start selfplay
 	g_isSelfPlaying = true;
 
+	// create the memory folder if it doesn't exist
+	try {
+		QDir dir(ui->Input_setDataFolder->text());
+		if (!dir.exists()) {
+			dir.mkpath(".");
+		}
+	} catch (std::exception e) {
+		this->print("Error: Could not create memory folder!");
+		exit(EXIT_FAILURE);
+	}
+
 	nn = std::make_shared<NeuralNetwork>(ui->Input_setModel->text().toStdString(), ui->RButton_CPU->isChecked());
 
 	for (int t = 0; t < ui->SpinBox_Threads->value(); t++) {
@@ -129,8 +139,6 @@ void MainWindow::startSelfPlay() {
 		);
 		thread_selfplay.detach();
 	}
-	
-	
 }
 
 
