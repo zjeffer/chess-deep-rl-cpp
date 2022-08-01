@@ -18,7 +18,7 @@
 
 #include "common.hh"
 
-MainWindow* g_mainWindow = nullptr;
+std::unique_ptr<MainWindow> g_mainWindow;
 
 void signal_handling(int signal) {
 	LOG(INFO) << "Signal " << signal << " received. Quitting...";
@@ -26,7 +26,7 @@ void signal_handling(int signal) {
 
 	if (g_mainWindow != nullptr) {
 		g_mainWindow->close();
-		delete g_mainWindow;
+		g_mainWindow.reset();
 	}
 }
 
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
 
 	if (inputParser.cmdOptionExists("--train")) {
 		// get network path
-		logger = std::make_unique<Logger>();
+		logger = std::make_shared<Logger>();
 		const std::string& network_path = inputParser.getCmdOption("--train");
 		Trainer trainer(network_path);
 		trainer.train();
@@ -127,17 +127,16 @@ int main(int argc, char** argv) {
 		}
 
 		
-		logger = std::make_unique<Logger>();
+		logger = std::make_shared<Logger>();
 		
 		// TODO: write code to run selfplay without GUI
 		LOG(DEBUG) << "Running in console mode!";
 	} else {
 		// GUI app
 		QApplication a(argc, argv);
-		g_mainWindow = new MainWindow();
+		g_mainWindow = std::make_unique<MainWindow>();
 		g_mainWindow->show();
 		return_code = a.exec();
-		delete g_mainWindow;
 	}
 	
 

@@ -28,20 +28,20 @@ void SelfPlay::playContinuously(const std::shared_ptr<NeuralNetwork> &nn, int am
         }
 
         if (winner == 1) {
-            mainWindow->print("White won!");
+            LOG(INFO) << "White won!";
             winners.white++;
         } else if (winner == -1) {
-            mainWindow->print("Black won!");
+            LOG(INFO) << "Black won!";
             winners.black++;
         } else {
-            mainWindow->print("Draw!");
+            LOG(INFO) << "Draw!";
             winners.draw++;
         }
-        mainWindow->print("\nCurrent score: \n");
-        mainWindow->print("\tWhite: " + winners.white);
-        mainWindow->print("\tBlack: " + winners.black);
-        mainWindow->print("\tDraw: " + winners.draw);
-        mainWindow->print("\n\n\n");
+        LOG(INFO) << "\nCurrent score: \n";
+        LOG(INFO) << "\tWhite: " + winners.white;
+        LOG(INFO) << "\tBlack: " + winners.black;
+        LOG(INFO) << "\tDraw: " + winners.draw;
+        LOG(INFO) << "\n\n\n";
     }
 }
 

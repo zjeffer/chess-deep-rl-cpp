@@ -10,18 +10,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	ui->setupUi(this);
 
 	// init logger
-	logger = std::make_unique<Logger>(this);
-
-	// set random seed
-	g_generator.seed(std::random_device{}());
-	LOG(DEBUG) << "Test random value: " << g_generator();
+	logger = std::make_shared<Logger>(this);
 
 	QVBoxLayout* mainBox = ui->VBox_Main;
 	m_Console = new Console(this);
 	mainBox->insertWidget(-1, m_Console);
 
-	this->print("Loaded console");
+	// set random seed
+	g_generator.seed(std::random_device{}());
+	LOG(DEBUG) << "Test random value: " << g_generator();
 
+	LOG(INFO) << "Loaded console";
 
 	// set button actions
 	connect(ui->Button_setModel, &QPushButton::clicked, this, &MainWindow::on_setModel_clicked);
@@ -32,11 +31,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	ui->Input_setDataFolder->setText(QDir::currentPath() + "/memory/");
 
 	connect(ui->actionExit, &QAction::triggered, this, &MainWindow::close);
-
 }
 
 void MainWindow::print(const std::string &text) {
-	LOG(INFO) << text;
 	this->m_Console->putData(text.c_str());
 }
 
@@ -65,9 +62,8 @@ void MainWindow::on_setModel_clicked() {
 	}
 
 
-	this->print("Loaded model from: " + filename.toStdString());
+	LOG(INFO) << "Loaded model from: " + filename.toStdString();
 	ui->Input_setModel->setText(filename);
-	// TODO: load model from filename
 }
 
 void MainWindow::on_setDataFolder_clicked() {
@@ -77,11 +73,11 @@ void MainWindow::on_setDataFolder_clicked() {
 	);
 
 	if (dir.size() == 0) {
-		this->print("Error: no folder selected");
+		LOG(INFO) << "Error: no folder selected";
 		return;
 	}
 
-	this->print("Data folder set to " + dir.toStdString());
+	LOG(INFO) << "Data folder set to " + dir.toStdString();
 	ui->Input_setDataFolder->setText(dir);
 	// TODO: set data folder in options
 }
@@ -92,11 +88,11 @@ void MainWindow::on_startSelfPlay_clicked(){
 	} else {
 		// check inputs
 		if (ui->Input_setDataFolder->text().length() == 0){
-			this->print("Error: Data folder not set!");
+			LOG(INFO) << "Error: Data folder not set!";
 			return;
 		}
 		if (ui->Input_setModel->text().length() == 0){
-			this->print("Error: Model file not set!");
+			LOG(INFO) << "Error: Model file not set!";
 			return;
 		}
 		startSelfPlay();
@@ -107,12 +103,12 @@ void MainWindow::stopSelfPlay() {
 	ui->Button_Start->setText("Start self-play");
 	g_isSelfPlaying = false;
 
-	this->print("Stopped selfplay.");
+	LOG(INFO) << "Stopped selfplay.";
 }
 
 void MainWindow::startSelfPlay() {
 	ui->Button_Start->setText("Stop self-play");
-	this->print("Starting selfplay with " + ui->SpinBox_Threads->text().toStdString() + " threads, and " + ui->SpinBox_Sims->text().toStdString() + "simulations/move...");
+	LOG(INFO) << "Starting selfplay with " + ui->SpinBox_Threads->text().toStdString() + " threads, and " + ui->SpinBox_Sims->text().toStdString() + "simulations/move...";
 
 	// start selfplay
 	g_isSelfPlaying = true;
@@ -124,7 +120,7 @@ void MainWindow::startSelfPlay() {
 			dir.mkpath(".");
 		}
 	} catch (std::exception e) {
-		this->print("Error: Could not create memory folder!");
+		LOG(INFO) << "Error: Could not create memory folder!";
 		exit(EXIT_FAILURE);
 	}
 

@@ -10,14 +10,16 @@ Console::Console(QWidget *parent) : QPlainTextEdit(parent) {
 	p.setColor(QPalette::Base, Qt::black);
 	p.setColor(QPalette::Text, Qt::green);
 	setPalette(p);
+
+	// set font
+	QFont font;
+	font.setFamily("Monospace");
+	font.setPointSize(10);
+	setFont(font);
 }
 
 void Console::putData(const QByteArray &data) {
-	// get current time
-	QTime time = QTime::currentTime();
-	std::stringstream ss;
-	ss << "[" << time.toString("hh:mm:ss").toStdString() << "] " << data.toStdString() << "\n";
-	insertPlainText(ss.str().c_str());
+	insertPlainText(data.toStdString().c_str());
 
 	QScrollBar *bar = verticalScrollBar();
 	bar->setValue(bar->maximum());
