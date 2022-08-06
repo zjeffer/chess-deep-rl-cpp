@@ -31,3 +31,5 @@ xhost +
 Example of the GUI running self-play with 2 games in parallel:
 
 ![Self-play GUI](img/selfplay-gui.png "Self-play GUI")
+
+[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fzjeffer%2Fchess-deep-rl-cpp&count_bg=%235E81AC&title_bg=%23555555&icon=&icon_color=%235E81AC&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
