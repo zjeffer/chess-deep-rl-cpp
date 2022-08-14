@@ -47,6 +47,8 @@ There are two ways to select these moves:
 	* 10% for action 2 (40/400)
 	* 40% for action 3 (160/400)
 
+Deterministic selection should be used when evaluating two models, or when playing against the model yourself. Stochastic selection is used when generating games through self-play.
+
 ### Creating a training set
 
 * To train the network, you need a lot of data
