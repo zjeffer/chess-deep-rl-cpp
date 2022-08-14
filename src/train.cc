@@ -11,7 +11,7 @@ Trainer::~Trainer(){
 
 void Trainer::train() {
 	int batch_size = 64;
-	int learning_rate = 0.002;
+	float learning_rate = 0.002;
 
 	// loading the dataset
 	ChessDataSet chessDataSet = ChessDataSet("memory");
