@@ -7,12 +7,12 @@
 
 
 MCTS::MCTS(Node* root, const std::shared_ptr<NeuralNetwork> &nn) {
-	this->root = root;
-	this->nn = nn;
+	m_Root = root;
+	m_NN = nn;
 }
 
 MCTS::~MCTS() {
-	delete this->root;
+	delete m_Root;
 }
 
 
@@ -20,15 +20,15 @@ void MCTS::run_simulations(int num_simulations) {
 	LOG(INFO) << "Running " << num_simulations << " simulations...";
 
 	// add dirichlet noise to the root node
-	float value = expand(this->root);
-	utils::addDirichletNoise(this->root);
+	float value = expand(m_Root);
+	utils::addDirichletNoise(m_Root);
 
 
 	tqdm bar;
 	for (int i = 0; i < num_simulations && g_running && g_isSelfPlaying; i++) {
 		bar.progress(i, num_simulations);
 		// selection
-		Node* leaf = select(this->root);
+		Node* leaf = select(m_Root);
 
 		// expansion and evaluation
 		value = expand(leaf);
@@ -37,11 +37,11 @@ void MCTS::run_simulations(int num_simulations) {
 		backpropagate(leaf, value);
 	}
 	std::cout << std::endl;
-	// LOG(DEBUG) << "Tree depth: " << getTreeDepth(this->root);
+	// LOG(DEBUG) << "Tree depth: " << getTreeDepth(m_Root);
 }
 
 Node* MCTS::select(Node* root){
-	auto start_time = std::chrono::high_resolution_clock::now();
+	// auto start_time = std::chrono::high_resolution_clock::now();
 
 	Node* current = root;
 	int traversals = 0;
@@ -70,7 +70,9 @@ Node* MCTS::select(Node* root){
 		}
 		current = best_child;
     }
-	auto stop = std::chrono::high_resolution_clock::now();
+	// auto stop = std::chrono::high_resolution_clock::now();
+	// auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start_time);
+	// LOG(INFO) << "Selection took " << duration.count() << " microseconds";
 
 	return current;
 }
@@ -82,7 +84,7 @@ float MCTS::expand(Node* node){
 
 
 	// send input to neural network
-	std::tuple<torch::Tensor, torch::Tensor> outputs = this->nn->predict(inputState);
+	std::tuple<torch::Tensor, torch::Tensor> outputs = m_NN->predict(inputState);
 	// get policy and value
 	torch::Tensor output_policy = std::get<0>(outputs).view({73, 8, 8});
 	float output_value = std::get<1>(outputs).item<float>();
@@ -113,7 +115,7 @@ float MCTS::expand(Node* node){
 	}
 	
 	std::map<thc::Move, float> moveProbs = utils::outputProbsToMoves(output_policy, legal_moves);
-	float sum_priors = 0.0;
+	float sum_priors = 0.0f;
 	for (auto moveProb : moveProbs) {
 		sum_priors += moveProb.second;
 	}
@@ -127,7 +129,7 @@ float MCTS::expand(Node* node){
 
 		// get the move probability for this move
 		float prior = moveProbs[move];
-		if (sum_priors != 0) {
+		if (sum_priors > 0.0f) {
 			prior /= sum_priors;
 		}
 		
@@ -143,27 +145,28 @@ float MCTS::expand(Node* node){
 }
 
 
-void MCTS::backpropagate(Node* node, float value){
+void MCTS::backpropagate(Node* node, float result){
 	bool player = node->getPlayer();
 	while (node != nullptr) {
 		node->incrementVisit();
+		float value = node->getValue();
 		if (node->getPlayer() == player) {
-			node->setValue(node->getValue() + value);
+			value += result;
 		} else {
-			node->setValue(node->getValue() + 1 - value);
+			value -= result;
 		}
+		node->setValue(value);
 		node = node->getParent();
 	}
 }
 
 
 Node* MCTS::getRoot() {
-	return this->root;
+	return m_Root;
 }
 
-void MCTS::setRoot(Node *newRoot){
-	delete this->root;
-	this->root = newRoot;
+void MCTS::setRoot(Node* newRoot){
+	m_Root = newRoot;
 }
 
 int MCTS::getTreeDepth(Node* root) {

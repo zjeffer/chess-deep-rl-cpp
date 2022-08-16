@@ -7,12 +7,12 @@ class Console : public QPlainTextEdit {
   Q_OBJECT
 
   signals:
-	void getData(const QByteArray &data);
+	void getData(const QByteArray &text);
 
   public:
 	explicit Console(QWidget *parent = nullptr);
 
-	void putData(const QByteArray &data);
+	void putData(const QByteArray &text);
 	void setLocalEchoEnabled(bool set);
 
   protected:

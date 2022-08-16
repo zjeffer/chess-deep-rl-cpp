@@ -1,24 +1,23 @@
 #include "agent.hh"
 
-Agent::Agent(std::string name, const std::shared_ptr<NeuralNetwork> &nn) {
-    this->name = name;
-    this->nn = nn;
-    this->mcts = new MCTS(new Node(), nn);
+Agent::Agent(std::string name, const std::shared_ptr<NeuralNetwork> &nn)
+    : m_NN(nn), m_MCTS(new MCTS(new Node(), m_NN)), m_Name(name) {
+
 }
 
 
 MCTS* Agent::getMCTS() {
-    return this->mcts;
+    return m_MCTS;
 }
 
 void Agent::updateMCTS(Node* newRoot){
-    this->mcts->setRoot(newRoot);
+    m_MCTS->setRoot(newRoot);
 }
 
-std::string Agent::getName() {
-    return this->name;
+const std::string& Agent::getName() const {
+    return m_Name;
 }
 
 void Agent::setName(std::string name) {
-    this->name = name;
+    m_Name = name;
 }

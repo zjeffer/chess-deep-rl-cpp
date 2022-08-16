@@ -18,8 +18,8 @@ Console::Console(QWidget *parent) : QPlainTextEdit(parent) {
 	setFont(font);
 }
 
-void Console::putData(const QByteArray &data) {
-	insertPlainText(data.toStdString().c_str());
+void Console::putData(const QByteArray &text) {
+	insertPlainText(text.toStdString().c_str());
 
 	QScrollBar *bar = verticalScrollBar();
 	bar->setValue(bar->maximum());

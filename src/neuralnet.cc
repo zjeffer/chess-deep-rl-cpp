@@ -94,7 +94,7 @@ NeuralNetwork::NeuralNetwork(std::string path, bool useCPU) {
     // random input
     LOG(DEBUG) << "Testing random input...";
     torch::Tensor input = torch::rand({1, 119, 8, 8});
-    std::tuple<torch::Tensor, torch::Tensor> outputs = this->predict(input);
+    std::pair<torch::Tensor, torch::Tensor> outputs = this->predict(input);
     LOG(DEBUG) << "Output successful";
 }
 
@@ -106,7 +106,7 @@ Network NeuralNetwork::getNetwork() {
     return this->neuralNet;
 }
 
-std::tuple<torch::Tensor, torch::Tensor> NeuralNetwork::predict(torch::Tensor &input) {
+std::pair<torch::Tensor, torch::Tensor> NeuralNetwork::predict(torch::Tensor &input) {
     input = input.to(this->device);
     return this->neuralNet->forward(input);
 }

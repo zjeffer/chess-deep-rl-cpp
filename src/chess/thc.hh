@@ -228,7 +228,7 @@ public:
 
     // Convert to natural string
     //  eg "Nf3"
-    std::string NaturalOut( ChessRules *cr );
+    const std::string NaturalOut( ChessRules *cr ) const;
 
     // Convert to terse string eg "e7e8q"
     std::string TerseOut();

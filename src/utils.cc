@@ -148,9 +148,9 @@ std::tuple<int, int, int> utils::moveToPlaneIndex(thc::Move move){
         plane_index = mapper[KnightMove::NORTH_LEFT + direction][0];
     } else {
         // get the correct direction
-        std::tuple<int, int> tuple =
-            Mapper::getQueenDirection(move.src, move.dst);
-        plane_index = mapper[std::get<0>(tuple)][std::get<1>(tuple)];
+        std::pair<int, int> mapping;
+        Mapper::getQueenDirection(move.src, move.dst, mapping);
+        plane_index = mapper[mapping.first][mapping.second];
     }
 
     if (plane_index < 0 or plane_index > 72) {
@@ -184,7 +184,7 @@ torch::Tensor utils::movesToOutputProbs(std::vector<MoveProb> moves){
     return output;
 }
 
-std::vector<float> utils::sampleFromGamma(float alpha, float scale, int size){
+std::vector<float> utils::sampleFromGamma(int size){
     std::vector<float> samples = std::vector<float>(size, 0.0f);
     float sum = 0.0f;
     for (int i = 0; i < size; i++){
@@ -197,15 +197,15 @@ std::vector<float> utils::sampleFromGamma(float alpha, float scale, int size){
     return samples;
 }
 
-void utils::addDirichletNoise(Node* root, float alpha) {
+void utils::addDirichletNoise(Node* root) {
     std::vector<Node*> children = root->getChildren();
 
     // get the noise
-    std::vector<float> noise = sampleFromGamma(alpha, 1.0f, children.size());
+    std::vector<float> noise = sampleFromGamma(children.size());
 
     float frac = 0.25;
 
-    for (int i = 0; i < children.size(); i++) {
+    for (int i = 0; i < (int)children.size(); i++) {
         children[i]->setPrior(children[i]->getPrior() * (1 - frac) + noise[i] * frac);
     }
 }
@@ -329,7 +329,7 @@ void utils::test_Train(std::string networkPath){
 
 
 	// optimizer
-	int learning_rate = 0.5;
+	float learning_rate = 0.5;
 	torch::optim::Adam optimizer(nn.getNetwork()->parameters(), learning_rate);
     optimizer.zero_grad();
 

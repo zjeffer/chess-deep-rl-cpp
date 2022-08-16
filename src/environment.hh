@@ -29,9 +29,9 @@ class Environment {
 
 		thc::TERMINAL terminalState;
 
-		bool getCurrentPlayer();
+		bool getCurrentPlayer() const;
 
-		std::string getFen();
+		const std::string& getFen();
 
 		int getAmountOfPieces();
 
@@ -68,7 +68,8 @@ class Environment {
 		
 
 	private:
-		thc::ChessRules rules;
+		thc::ChessRules m_ChessRules;
+		std::string m_Fen = "";
 
 };
 

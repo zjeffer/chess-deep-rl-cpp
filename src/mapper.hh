@@ -42,7 +42,7 @@ class Mapper {
 	public:
 		static int getUnderpromotionDirection(int src, int dst);
 		static int getKnightDirection(int src, int dst);
-		static std::tuple<int, int> getQueenDirection(int src, int dst);
+		static void getQueenDirection(int src, int dst, std::pair<int, int>& mapping);
 
 };
 

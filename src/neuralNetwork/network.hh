@@ -13,9 +13,6 @@
 #include "valueHead.hh"
 #include "policyHead.hh"
 
-#include <tuple>
-
-
 
 struct NetworkImpl : public torch::nn::Module {
 	NetworkImpl(int planes, int width, int height, int outputs, int filters, int policyFilters, int valueFilters) {
@@ -46,7 +43,7 @@ struct NetworkImpl : public torch::nn::Module {
 
 	}
 
-	std::tuple<torch::Tensor, torch::Tensor> forward(const torch::Tensor& input) {
+	std::pair<torch::Tensor, torch::Tensor> forward(const torch::Tensor& input) {
 		auto x = convInput(input);
 		x = resBlock1(x);
 		x = resBlock2(x);
@@ -70,7 +67,7 @@ struct NetworkImpl : public torch::nn::Module {
 		auto policy = policyHead(x);
 		auto value = valueHead(x);
 
-		return std::make_tuple(policy, value);
+		return std::make_pair(policy, value);
 	}
 
 	ConvBlock convInput = nullptr;

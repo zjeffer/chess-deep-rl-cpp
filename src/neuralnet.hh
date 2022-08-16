@@ -24,7 +24,7 @@ class NeuralNetwork {
     NeuralNetwork(std::string path = "", bool useCPU=false);
 	~NeuralNetwork();
 
-    std::tuple<torch::Tensor, torch::Tensor> predict(torch::Tensor &input);
+    std::pair<torch::Tensor, torch::Tensor> predict(torch::Tensor &input);
 
     void trainBatches(ChessDataLoader &loader, torch::optim::Optimizer &optimizer, int data_size, int batch_size);
 

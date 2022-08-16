@@ -1,9 +1,10 @@
 #pragma once
 
 
-#include "chess/thc.hh"
+#include <memory>
 #include <vector>
 #include <string>
+#include "chess/thc.hh"
 #include "types.hh"
 
 
@@ -13,49 +14,51 @@ public:
 	Node();
 	~Node();
 
-	std::string getFen();
+	Node(const Node&);
+
+	const std::string& getFen() const;
 	void setFen(std::string fen);
 
-	Node* getParent();
+	Node* getParent() const;
 	void setParent(Node* parent);
 
-	std::vector<Node*> getChildren();
-	Node* getChild(std::string fen);
-	Node* getChild(thc::Move action);
+	const std::vector<Node*>& getChildren() const;
+	Node* getChild(const std::string& fen) const;
+	Node* getChild(const thc::Move& action) const;
 	
 	void add_child(Node* child);
 
-	bool isLeaf();
+	bool isLeaf() const;
 
-	int getVisitCount();
+	int getVisitCount() const;
 	void incrementVisit();
 	void setVisitCount(int n);
 
-	float getValue();
+	float getValue() const;
 	void setValue(float value);
 
-	float getPrior();
+	float getPrior() const;
 	void setPrior(float prior);
 
-	float getPUCTScore();
-	float getQ();
-	float getUCB();
+	float getPUCTScore() const;
+	float getQ() const;
+	float getUCB() const;
 
-	bool getPlayer();
+	bool getPlayer() const;
 
-	thc::Move getAction();
+	const thc::Move& getAction() const;
 
-	std::vector<MoveProb> getProbs();
+	std::vector<MoveProb> getProbs() const;
 
 private:
-	std::string fen;
-	Node* parent;
-	thc::Move action;
-	std::vector<Node*> children;
+	std::string m_Fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+	Node* m_Parent = nullptr;
+	thc::Move m_Action = thc::Move();
+	std::vector<Node*> m_Children = {};
 
-	int visit_count; // N
-	float value; // W
-	float prior; // P
+	int m_VisitCount = 0; // N
+	float m_Value = 0.0f; // W
+	float m_Prior = 0.0f; // P
 
 };
 

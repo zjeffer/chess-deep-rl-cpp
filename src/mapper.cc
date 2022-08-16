@@ -61,7 +61,7 @@ int Mapper::getKnightDirection(int src, int dst) {
     return direction;
 }
 
-std::tuple<int, int> Mapper::getQueenDirection(int src, int dst) {
+void Mapper::getQueenDirection(int src, int dst, std::pair<int, int>& mapping) {
 	// TODO: fix for board with square 0 in top left corner
     int diff = src - dst;
     int direction = 0;
@@ -101,5 +101,6 @@ std::tuple<int, int> Mapper::getQueenDirection(int src, int dst) {
         perror("Invalid Queen-like move");
 		exit(EXIT_FAILURE);
     }
-    return std::make_tuple(direction, distance);
+    mapping.first = direction;
+    mapping.second = distance;
 }

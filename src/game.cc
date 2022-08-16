@@ -1,48 +1,46 @@
 #include "game.hh"
-#include "ui/mainwindow.hh"
 
 
-Game::Game(int simulations, Environment* env, Agent* white, Agent* black, MainWindow* mainWindow) {
-	this->simulations = simulations;
-	this->env = env;
-	this->white = white;
-	this->black = black;
-	this->mainWindow = mainWindow;
+Game::Game(int simulations, Environment* env, Agent* white, Agent* black) {
+	m_Simulations = simulations;
+	m_Env = env;
+	m_White = white;
+	m_Black = black;
 
 	if(env->getCurrentPlayer()){
-		this->white->updateMCTS(new Node(env->getFen(), nullptr, thc::Move(), 0.0));
+		m_White->updateMCTS(new Node(env->getFen(), nullptr, thc::Move(), 0.0));
 	} else {
-		this->black->updateMCTS(new Node(env->getFen(), nullptr, thc::Move(), 0.0));
+		m_Black->updateMCTS(new Node(env->getFen(), nullptr, thc::Move(), 0.0));
 	}
 
-	this->previous_moves = new thc::Move[2];
+	m_Previous_moves = new thc::Move[2];
 
 	// for stochastic move selection
-	this->dist = std::uniform_int_distribution<int>(0, RAND_MAX);
+	m_Dist = std::uniform_int_distribution<int>(0, RAND_MAX);
 	// for creating random id
 	std::uniform_int_distribution<int> game_id_dist = std::uniform_int_distribution<int>(0, 1000000);
 	
 	// create a random id
 	std::string current_date = std::to_string(std::time(nullptr));
-	this->game_id = "game-" + current_date + "-" + std::to_string(game_id_dist(g_generator));
+	m_Game_id = "game-" + current_date + "-" + std::to_string(game_id_dist(g_generator));
 }
 
 void Game::reset() {
-	this->env->reset();
-	this->memory.clear();
+	m_Env->reset();
+	m_Memory.clear();
 }
 
 int Game::playGame(bool stochastic) {
-	this->stochastic = stochastic;
+	m_Stochastic = stochastic;
 	int winner = 0;
 	int counter = 0;
 	thc::DRAWTYPE drawType;
-	while (!this->env->isGameOver() && g_running && g_isSelfPlaying) {
-		this->env->printBoard();
+	while (!m_Env->isGameOver() && g_running && g_isSelfPlaying) {
+		m_Env->printBoard();
 		
 		this->playMove();
-		LOG(INFO) << "Value according to white: " << this->white->getMCTS()->getRoot()->getQ();
-		LOG(INFO) << "Value according to black: " << this->black->getMCTS()->getRoot()->getQ();
+		LOG(INFO) << "Value according to white: " << m_White->getMCTS()->getRoot()->getQ();
+		LOG(INFO) << "Value according to black: " << m_Black->getMCTS()->getRoot()->getQ();
 
 		counter++;
 		if (counter > MAX_MOVES) {
@@ -50,8 +48,8 @@ int Game::playGame(bool stochastic) {
 			break;
 		} 
 		
-		if (this->env->getRules()->IsDraw(this->env->getCurrentPlayer(), drawType)){
-			this->env->printDrawType(drawType);
+		if (m_Env->getRules()->IsDraw(m_Env->getCurrentPlayer(), drawType)){
+			m_Env->printDrawType(drawType);
 			break;
 		}
 	}
@@ -60,10 +58,10 @@ int Game::playGame(bool stochastic) {
 		exit(EXIT_SUCCESS);
 	}
 
-	if (this->env->isGameOver()){
-		if (this->env->terminalState == thc::TERMINAL_BCHECKMATE){
+	if (m_Env->isGameOver()){
+		if (m_Env->terminalState == thc::TERMINAL_BCHECKMATE){
 			winner = 1;
-		} else if(this->env->terminalState == thc::TERMINAL_WCHECKMATE) {
+		} else if(m_Env->terminalState == thc::TERMINAL_WCHECKMATE) {
 			winner = -1;
 		}
 	}
@@ -86,22 +84,22 @@ int Game::playGame(bool stochastic) {
 }
 
 void Game::playMove(){
-	Agent* currentPlayer = this->env->getCurrentPlayer() ? this->white : this->black;
+	Agent* currentPlayer = m_Env->getCurrentPlayer() ? m_White : m_Black;
 	LOG(INFO) << "Current player: " << currentPlayer->getName();	
 
 	// update mcts tree
 	// TODO: use subtree of previously chosen move as next root
-	currentPlayer->getMCTS()->setRoot(new Node(this->env->getFen(), nullptr, thc::Move(), 0.0));
+	currentPlayer->getMCTS()->setRoot(new Node(m_Env->getFen(), nullptr, thc::Move(), 0.0));
 
 	// run the sims
-	currentPlayer->getMCTS()->run_simulations(this->simulations);
+	currentPlayer->getMCTS()->run_simulations(m_Simulations);
 
 	std::vector<Node*> childNodes = currentPlayer->getMCTS()->getRoot()->getChildren();
 
 
 	// create memory element
 	MemoryElement element;
-	element.state = this->env->getFen();
+	element.state = m_Env->getFen();
 	element.probs = currentPlayer->getMCTS()->getRoot()->getProbs();
 	element.winner= 0;
 
@@ -117,13 +115,13 @@ void Game::playMove(){
 	/* LOG(DEBUG) << "Moves: ";
 	for (int i = 0; i < childNodes.size(); i++) {
 		thc::Move move = childNodes[i]->getAction();
-		LOG(DEBUG) << "Move " << i << ": " << move.NaturalOut(this->env->getRules())
+		LOG(DEBUG) << "Move " << i << ": " << move.NaturalOut(m_Env->getRules())
 			<< " " << childNodes[i]->getVisitCount() << " visits. " 
 			<< "PUCT score: " << childNodes[i]->getQ() << " + " << childNodes[i]->getUCB() << ". Prior: " << childNodes[i]->getPrior();
 	} */
 	
 	thc::Move bestMove;
-	if (this->stochastic){
+	if (m_Stochastic){
 		bestMove = getBestMoveStochastic(element.probs);
 	} else {
 		bestMove = getBestMoveDeterministic(element.probs);
@@ -135,21 +133,21 @@ void Game::playMove(){
 		exit(EXIT_FAILURE);
 	}	
 
-	LOG(DEBUG) << this->env->getFen();
-	LOG(INFO) << "Chosen move: " << this->env->getRules()->full_move_count << ". " << bestMove.NaturalOut(this->env->getRules());
+	LOG(DEBUG) << m_Env->getFen();
+	LOG(INFO) << "Chosen move: " << m_Env->getRules()->full_move_count << ". " << bestMove.NaturalOut(m_Env->getRules());
 	
 	// update previous moves
-	this->previous_moves[0] = this->previous_moves[1];
-	this->previous_moves[1] = bestMove;
+	m_Previous_moves[0] = m_Previous_moves[1];
+	m_Previous_moves[1] = bestMove;
 
-	// LOG(DEBUG) << "Current prevmoves: " << this->previous_moves[0].src << "-" << this->previous_moves[0].dst << " and " << this->previous_moves[1].src << "-" << this->previous_moves[1].dst;
+	// LOG(DEBUG) << "Current prevmoves: " << m_Previous_moves[0].src << "-" << m_Previous_moves[0].dst << " and " << m_Previous_moves[1].src << "-" << m_Previous_moves[1].dst;
 
-	this->env->makeMove(bestMove);
+	m_Env->makeMove(bestMove);
 	thc::ILLEGAL_REASON reason;
-	if (!this->env->getRules()->IsLegal(reason)){
+	if (!m_Env->getRules()->IsLegal(reason)){
 		LOG(WARNING) << "Reached an illegal position after the last move. Reason: " << reason;
-		this->env->printBoard();
-		LOG(DEBUG) << this->env->getFen();
+		m_Env->printBoard();
+		LOG(DEBUG) << m_Env->getFen();
 		LOG(DEBUG) << bestMove.src << "-" << bestMove.dst;
 		LOG(DEBUG) << bestMove.special;
 		exit(EXIT_FAILURE);
@@ -163,7 +161,7 @@ thc::Move Game::getBestMoveStochastic(std::vector<MoveProb> &probs){
 	for (const auto& prob : probs){
 		total_probability += prob.prob;
 	}
-	float p = (this->dist(g_generator) / static_cast<float>(RAND_MAX)) * total_probability;
+	float p = (m_Dist(g_generator) / static_cast<float>(RAND_MAX)) * total_probability;
 	int index = 0;
 	while ((p -= probs[index].prob) > 0) {
 		index++;
@@ -185,15 +183,15 @@ thc::Move Game::getBestMoveDeterministic(std::vector<MoveProb> &probs){
 }
 
 Environment* Game::getEnvironment(){
-	return this->env;
+	return m_Env;
 }
 
 void Game::saveToMemory(MemoryElement element) {
-	this->memory.push_back(element);
+	m_Memory.push_back(element);
 }
 
 void Game::updateMemory(int winner){
-	for (auto& element : this->memory){
+	for (auto& element : m_Memory){
 		if (winner == 0) {
 			element.winner = 0;
 			continue;
@@ -234,26 +232,26 @@ void Game::memoryElementToTensors(MemoryElement *memory_element, torch::Tensor& 
 
 void Game::memoryToFile(){
 	// convert MemoryElements to tensors
-	torch::Tensor inputs = torch::zeros({(int)this->memory.size(), 119, 8, 8});
-	torch::Tensor outputs = torch::zeros({(int)this->memory.size(), 73*8*8 + 1});
-	for (int i = 0; i < (int)this->memory.size(); i++){
+	torch::Tensor inputs = torch::zeros({(int)m_Memory.size(), 119, 8, 8});
+	torch::Tensor outputs = torch::zeros({(int)m_Memory.size(), 73*8*8 + 1});
+	for (int i = 0; i < (int)m_Memory.size(); i++){
 		torch::Tensor input_tensor = torch::zeros({119, 8, 8});
 		torch::Tensor output_tensor = torch::zeros({73*8*8 + 1});
-		memoryElementToTensors(&this->memory[i], input_tensor, output_tensor);
+		memoryElementToTensors(&m_Memory[i], input_tensor, output_tensor);
 		inputs[i] = input_tensor.clone();
 		outputs[i] = output_tensor.clone();
 	}
 
 	// create a directory for the current game
-	LOG(DEBUG) << "Creating directory for game id = " << this->game_id;
-	std::string directory = "memory/" + this->game_id;
+	LOG(DEBUG) << "Creating directory for game id = " << m_Game_id;
+	std::string directory = "memory/" + m_Game_id;
 	if (!utils::createDirectory(directory)){
 		LOG(WARNING) << "Could not create directory for current game";
 		exit(EXIT_FAILURE);
 	}
 
 	// save tensors to file
-	for (int i = 0; i < (int)this->memory.size(); i++){
+	for (int i = 0; i < (int)m_Memory.size(); i++){
 		// get the move number with zero padding
 		std::ostringstream ss;
 		ss << std::setw(3) << std::setfill('0') << i;
@@ -274,5 +272,5 @@ void Game::memoryToFile(){
 	}
 
 	// reset memory
-	this->memory.clear();
+	m_Memory.clear();
 }

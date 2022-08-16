@@ -11,13 +11,13 @@ class Agent {
 
 		void updateMCTS(Node* newRoot);
 
-		std::string getName();
+		const std::string& getName() const;
 
 		void setName(std::string name);
 
 	private:
-		std::shared_ptr<NeuralNetwork> nn;
-		MCTS* mcts;
-		std::string name;
+		std::shared_ptr<NeuralNetwork> m_NN;
+		MCTS* m_MCTS;
+		std::string m_Name;
 };
 

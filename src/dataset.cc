@@ -25,7 +25,7 @@ ChessDataSet::ChessDataSet(std::string path) {
                     // also load corresponding output: output path is the same as input path, but with "output" instead of "input"
                     output_path = move.path().string().replace(move.path().string().find("input"), 5, "output");
                     torch::load(outputs, output_path.c_str());
-                } catch (std::exception &e) {
+                } catch (const std::exception& e) {
                     LOG(WARNING) << "Could not load tensor from file: " << move.path() << "\n" << e.what();
                     exit(EXIT_FAILURE);
                 }

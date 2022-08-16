@@ -2624,8 +2624,10 @@ bool ChessRules::IsInsufficientDraw(bool white_asks, DRAWTYPE &result) {
         case 'B':
         case 'b':
         case 'N':
-        case 'n':
+        case 'n': {
             bishop_or_knight = true; // and fall through
+            [[fallthrough]];
+        }
         case 'Q':
         case 'q':
         case 'R':
@@ -3322,7 +3324,7 @@ bool ChessRules::AttackedSquare(Square square, bool enemy_is_white) {
         lte ray_len = *ptr++;
         while (ray_len--) {
             dst = (Square)*ptr++;
-            char piece = squares[dst];
+            unsigned char piece = squares[dst];
 
             // If square not occupied (empty), continue
             if (IsEmptySquare(piece))
@@ -3755,6 +3757,7 @@ bool Move::NaturalIn(ChessRules *cr, const char *natural_in) {
                         break; // else fall through to promotion - allows say "a5b" as disambiguating
                                //  version of "ab" if there's more than one "ab" available! Something
                                //  of an ultra refinement
+                    [[fallthrough]];
                 case 'B':
                     promotion = 'B';
                     break;
@@ -4708,7 +4711,7 @@ bool Move::TerseIn(ChessRules *cr, const char *tmove) {
  * Convert to natural string
  *    eg "Nf3"
  ****************************************************************************/
-std::string Move::NaturalOut(ChessRules *cr) {
+const std::string Move::NaturalOut(ChessRules *cr) const {
 
     // Improved algorithm
 

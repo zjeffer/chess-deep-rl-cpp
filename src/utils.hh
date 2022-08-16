@@ -38,9 +38,9 @@ std::map<thc::Move, float> outputProbsToMoves(torch::Tensor &outputProbs, std::v
 
 torch::Tensor movesToOutputProbs(std::vector<MoveProb> moves);
 
-std::vector<float> sampleFromGamma(float alpha, float scale, int size);
+std::vector<float> sampleFromGamma(int size);
 
-void addDirichletNoise(Node* root, float alpha=0.3);
+void addDirichletNoise(Node* root);
 
 std::string getDirectoryFromFilename(std::string filename);
 

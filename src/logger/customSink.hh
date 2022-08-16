@@ -20,6 +20,8 @@ enum LogColor {
 
 class CustomSink {
   public:
+	virtual ~CustomSink() = default;
+
 	virtual void callback(g3::LogMessageMover log) = 0;
 
 	static LogColor getColor(const LEVELS level){
@@ -32,8 +34,9 @@ class CustomSink {
 				return LogColor::YELLOW;
 			case g3::kFatalValue:
 				return LogColor::RED;
+			default: 
+				return g3::internal::wasFatal(level) ? LogColor::RED : LogColor::WHITE;
 		}
-		return g3::internal::wasFatal(level) ? LogColor::RED : LogColor::WHITE;
 	} 
 };
 

@@ -10,24 +10,23 @@
 
 class MCTS {
   public:
-    MCTS(Node *root, const std::shared_ptr<NeuralNetwork> &nn);
+    MCTS(Node* root, const std::shared_ptr<NeuralNetwork> &nn);
     ~MCTS();
 
     void run_simulations(int num_simulations);
 
-    Node *select(Node *root);
+    Node* select(Node* root);
 
-    float expand(Node *node);
+    float expand(Node* node);
 
-    void backpropagate(Node *node, float value);
+    void backpropagate(Node* node, float result);
 
-    Node *getRoot();
-    void setRoot(Node *newRoot);
+    Node* getRoot();
+    void setRoot(Node* newRoot);
 
-    static int getTreeDepth(Node *root);
+    static int getTreeDepth(Node* root);
 
   private:
-    Node *root;
-
-    std::shared_ptr<NeuralNetwork> nn;
+    Node* m_Root;
+    std::shared_ptr<NeuralNetwork> m_NN;
 };

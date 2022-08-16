@@ -10,8 +10,6 @@
 
 #define MAX_MOVES 1000
 
-class MainWindow;
-
 class Game {
   public:
 	/**
@@ -22,7 +20,7 @@ class Game {
 	 * @param white 
 	 * @param black 
 	 */
-    Game(int simulations, Environment* env, Agent* white, Agent* black, MainWindow* mainWindow);
+    Game(int simulations, Environment* env, Agent* white, Agent* black);
 
 	/**
 	 * @brief Play one game. Returns the winner.
@@ -93,30 +91,27 @@ class Game {
 
   private:
 	// holds the amount of simulations to run every move
-	int simulations;
+	int m_Simulations;
 
-	bool stochastic = true;
+	bool m_Stochastic = true;
 
 	// the environment the agents will interact with
-	Environment* env;
+	Environment* m_Env;
 	
 	// the agent that will interact with the environment
-	Agent* white;
-	Agent* black;
-
-	MainWindow* mainWindow;
+	Agent* m_White;
+	Agent* m_Black;
 
 	// the pair of previous moves played
-	thc::Move *previous_moves;
+	thc::Move *m_Previous_moves;
 	
 	// for every move, holds the state, move probs and the eventual winner 
-	std::vector<MemoryElement> memory;
+	std::vector<MemoryElement> m_Memory;
 	
 	// a unique id for this game
-	std::string game_id;
+	std::string m_Game_id;
 
 	// for random generation
-	std::mt19937 rng;
-	std::uniform_int_distribution<int> dist;
+	std::uniform_int_distribution<int> m_Dist;
 };
 

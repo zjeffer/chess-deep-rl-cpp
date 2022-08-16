@@ -1,127 +1,121 @@
 #include "node.hh"
+#include <cstddef>
+#include <cstdint>
 #include <string.h>
 #include <math.h>
+#include <unistd.h>
 #include <vector>
 #include <chrono>
 #include <iostream>
 #include "common.hh"
 
-Node::Node(std::string fen, Node* parent, thc::Move action, float prior) {
-	this->fen = fen;
-	this->parent = parent;
-	this->action = action;
-	this->prior = prior;
+Node::Node(std::string fen, Node* parent, thc::Move action, float prior) 
+	: m_Fen(std::move(fen)), m_Parent(parent), m_Action(action), m_Prior(prior) {
 
-	this->visit_count = 0;
-	this->value = 0.0;
 }
 
-Node::Node() : Node("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", nullptr, thc::Move(), 1.0) {
-	
-}
+Node::Node() {}
 
-Node::~Node() {
-	for (int i = 0; i < (int)this->children.size(); i++) {
-        delete this->children[i];
-    }
-}
+Node::~Node() {}
 
-std::string Node::getFen() {
-    return this->fen;
+
+const std::string& Node::getFen() const {
+    return m_Fen;
 }
 void Node::setFen(std::string fen) {
-    this->fen = fen;
+    m_Fen = std::move(fen);
 }
 
-Node* Node::getParent() {
-    return this->parent;
+Node* Node::getParent() const {
+    return m_Parent;
 }
 void Node::setParent(Node* parent) {
-    this->parent = parent;
+    m_Parent = parent;
 }
 
-std::vector<Node*> Node::getChildren() {
-	return this->children;
+const std::vector<Node*>& Node::getChildren() const {
+	return m_Children;
 }
-Node* Node::getChild(std::string fen){
-	for (int i = 0; i < (int)this->children.size(); i++) {
-		if (strcmp(this->children[i]->getFen().c_str(), fen.c_str()) == 0) {
-			return this->children[i];
+
+Node* Node::getChild(const std::string& fen) const {
+	for (int i = 0; i < (int)m_Children.size(); i++) {
+		if (strcmp(m_Children[i]->getFen().c_str(), fen.c_str()) == 0) {
+			return m_Children[i];
 		}
 	}
 	return nullptr;
 }
 
-Node* Node::getChild(thc::Move action) {
-	for (int i = 0; i < (int)this->children.size(); i++) {
-		if (this->children[i]->getAction() == action) {
-			return this->children[i];
+Node* Node::getChild(const thc::Move& action) const {
+	for (int i = 0; i < (int)m_Children.size(); i++) {
+		if (m_Children[i]->getAction() == action) {
+			return m_Children[i];
 		}
 	}
 	return nullptr;
 }
 
 void Node::add_child(Node* child) {
-    this->children.push_back(child);
+    m_Children.push_back(child);
 }
 
 
-bool Node::isLeaf() {
-    return this->children.size() == 0;
+bool Node::isLeaf() const {
+    return m_Children.size() == 0;
 }
 
-int Node::getVisitCount(){
-	return this->visit_count;
+int Node::getVisitCount() const {
+	return m_VisitCount;
 }
 void Node::incrementVisit() {
-    this->visit_count++;
+    m_VisitCount++;
 }
 void Node::setVisitCount(int n){
-	this->visit_count = n;
+	m_VisitCount = n;
 }
 
 
-float Node::getValue() {
-	return this->value;
+float Node::getValue() const {
+	return m_Value;
 }
 void Node::setValue(float value) {
-	this->value = value;
+	m_Value = value;
 }
 
-float Node::getPrior() {
-	return this->prior;
+float Node::getPrior() const {
+	return m_Prior;
 }
 void Node::setPrior(float prior) {
-	this->prior = prior;
+	m_Prior = prior;
 }
 
-float Node::getPUCTScore(){
-	return this->getQ() + this->getUCB();
+float Node::getPUCTScore() const{
+	return getQ() + getUCB();
 }
 
-float Node::getQ(){
-	return this->value / (this->visit_count + 1);
+float Node::getQ() const{
+	return (float)m_Value / (float)(m_VisitCount + 1);
 }
 
-float Node::getUCB(){
-	if (this->parent == nullptr){
+float Node::getUCB() const{
+	if (m_Parent == nullptr){
 		LOG(WARNING) << "parent is null";
 		exit(EXIT_FAILURE);
 	}
-	float exploration_rate = log((this->parent->getVisitCount() + 19652 + 1) / 19652) + 1.25;
-	exploration_rate *= sqrt(this->parent->getVisitCount() + 1) / (this->visit_count + 1);
-	return exploration_rate * this->getPrior();
+	float exploration_rate = log(((float)m_Parent->getVisitCount() + 19652.0f + 1.0f) / 19652.0f) + 1.25f;
+	exploration_rate *= sqrt((float)m_Parent->getVisitCount() + 1.0f) / ((float)getVisitCount() + 1.0f);
+	return exploration_rate * getPrior();
 }
 
-bool Node::getPlayer(){
+bool Node::getPlayer() const{
 	// parse the fen and return the current player
-	int i = 0;
-	while (this->fen[i] != ' '){
+	uint8_t i = 0;
+	while (m_Fen[i] != ' '){
 		i++;
 	}
-	if(this->fen[i+1] == 'w'){
+	if(m_Fen[i+1] == 'w'){
 		return true;
-	} else if (this->fen[i+1] == 'b') {
+	} else if (m_Fen[i+1] == 'b') {
 		return false;
 	} else {
 		LOG(FATAL) << "error: getPlayer: not white or black";
@@ -129,17 +123,17 @@ bool Node::getPlayer(){
 	}
 }
 
-thc::Move Node::getAction(){
-	return this->action;
+const thc::Move& Node::getAction() const {
+	return m_Action;
 }
 
-std::vector<MoveProb> Node::getProbs(){
+std::vector<MoveProb> Node::getProbs() const{
 	std::vector<MoveProb> probs;
 
-	for (int i = 0; i < (int)this->children.size(); i++){
+	for (size_t i = 0; i < m_Children.size(); i++){
 		MoveProb mp;
-		mp.move = this->children[i]->getAction();
-		mp.prob = (float)this->children[i]->getVisitCount() / (float)this->getVisitCount();
+		mp.move = m_Children[i]->getAction();
+		mp.prob = (float)m_Children[i]->getVisitCount() / (float)getVisitCount();
 		probs.push_back(mp);
 	}
 

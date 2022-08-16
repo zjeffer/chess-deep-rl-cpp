@@ -108,7 +108,7 @@ void MainWindow::stopSelfPlay() {
 
 void MainWindow::startSelfPlay() {
 	ui->Button_Start->setText("Stop self-play");
-	LOG(INFO) << "Starting selfplay with " + ui->SpinBox_Threads->text().toStdString() + " threads, and " + ui->SpinBox_Sims->text().toStdString() + "simulations/move...";
+	LOG(INFO) << "Starting selfplay with " + ui->SpinBox_Threads->text().toStdString() + " threads, and " + ui->SpinBox_Sims->text().toStdString() + " simulations/move...";
 
 	// start selfplay
 	g_isSelfPlaying = true;
@@ -119,8 +119,8 @@ void MainWindow::startSelfPlay() {
 		if (!dir.exists()) {
 			dir.mkpath(".");
 		}
-	} catch (std::exception e) {
-		LOG(INFO) << "Error: Could not create memory folder!";
+	} catch (const std::exception& e) {
+		LOG(FATAL) << "Error: Could not create memory folder!";
 		exit(EXIT_FAILURE);
 	}
 
@@ -130,8 +130,7 @@ void MainWindow::startSelfPlay() {
 		std::thread thread_selfplay = std::thread(
 			&SelfPlay::playContinuously,
 			nn, // model
-			ui->SpinBox_Sims->value(), // amount of sims per move
-			this
+			ui->SpinBox_Sims->value() // amount of sims per move
 		);
 		thread_selfplay.detach();
 	}
