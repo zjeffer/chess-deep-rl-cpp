@@ -61,12 +61,34 @@ target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${TORCH_LIBRARIES} g3log Qt
 set_target_properties(${PROJECT_NAME} PROPERTIES
     WIN32_EXECUTABLE ON
     MACOSX_BUNDLE ON
+    CXX_STANDARD 20
 )
+# set warnings
+target_compile_options(${PROJECT_NAME} PRIVATE 
+    -Wall -pedantic 
+    -pedantic-errors -Wextra -Wcast-align
+    -Wchar-subscripts  -Wcomment
+    -Wdisabled-optimization
+    -Werror -Wfloat-equal  -Wformat  -Wformat=2
+    -Wformat-nonliteral -Wformat-security 
+    -Wformat-y2k
+    -Wimport  -Winit-self  -Winline
+    -Winvalid-pch  
+    -Wunsafe-loop-optimizations  -Wlong-long
+    -Wmissing-field-initializers -Wmissing-format-attribute  
+    -Wmissing-noreturn
+    -Wpacked -Wparentheses  -Wpointer-arith
+    -Wredundant-decls -Wreturn-type
+    -Wsequence-point -Wsign-compare  -Wstack-protector
+    -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wtrigraphs  -Wuninitialized
+    -Wunknown-pragmas  -Wunreachable-code -Wunused
+    -Wunused-function  -Wunused-label  -Wunused-parameter
+    -Wunused-value  -Wunused-variable  -Wvariadic-macros
+    # -Wshadow
+    -Wvolatile-register-var  -Wwrite-strings)
 
 # fix libgomp error
 add_library(libgomp SHARED IMPORTED)
 set_property(TARGET libgomp PROPERTY IMPORTED_LOCATION "/usr/lib/libgomp.so")
 target_link_libraries(${PROJECT_NAME} libgomp)
 
-# set c++ standard
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
