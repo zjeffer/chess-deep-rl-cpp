@@ -1,8 +1,4 @@
 #include "console.hh"
-#include <sstream>
-
-#include <QScrollBar>
-#include <QTime>
 
 Console::Console(QWidget *parent) : QPlainTextEdit(parent) {
 	document()->setMaximumBlockCount(100);
@@ -11,18 +7,23 @@ Console::Console(QWidget *parent) : QPlainTextEdit(parent) {
 	p.setColor(QPalette::Text, Qt::green);
 	setPalette(p);
 
+	// don't wrap lines, use horizontal scrolling when lines are too long
+	setLineWrapMode(QPlainTextEdit::LineWrapMode::NoWrap);
+
 	// set font
 	QFont font;
 	font.setFamily("Monospace");
 	font.setPointSize(10);
 	setFont(font);
+
+	// set scrollbar
+	m_verticalScrollBar = verticalScrollBar();
 }
 
 void Console::putData(const QByteArray &text) {
 	insertPlainText(text.toStdString().c_str());
 
-	QScrollBar *bar = verticalScrollBar();
-	bar->setValue(bar->maximum());
+	m_verticalScrollBar->setValue(m_verticalScrollBar->maximum());
 }
 
 void Console::setLocalEchoEnabled(bool set) { m_localEchoEnabled = set; }

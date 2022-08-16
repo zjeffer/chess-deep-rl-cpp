@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QPlainTextEdit>
+#include <qscrollbar.h>
 
 class Console : public QPlainTextEdit {
 
@@ -23,4 +24,6 @@ class Console : public QPlainTextEdit {
 
   private:
 	bool m_localEchoEnabled = false;
+
+	QScrollBar* m_verticalScrollBar;
 };
