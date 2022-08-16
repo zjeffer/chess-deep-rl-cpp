@@ -6,6 +6,7 @@
 	},
 
 	"extensions": [
+		"llvm-vs-code-extensions.vscode-clangd",
 		"ms-vscode.cpptools-themes",
 		"ms-vscode.cpptools",
 		"cschlosser.doxdocgen",
