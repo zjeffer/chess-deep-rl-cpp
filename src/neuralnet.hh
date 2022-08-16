@@ -37,7 +37,7 @@ class NeuralNetwork {
   private:
     torch::Device device = torch::Device(torch::kCPU);
 
-    Network neuralNet = nullptr;
+    Network m_NN = nullptr;
 
 };
 

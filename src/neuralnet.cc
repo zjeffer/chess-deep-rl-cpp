@@ -20,7 +20,7 @@ bool NeuralNetwork::loadModel(std::string path) {
     try {
         // load model from path
         LOG(INFO) << "Loading model from: " << path;
-        torch::load(this->neuralNet, path);
+        torch::load(m_NN, path);
     } catch (const std::exception& e) {
         LOG(WARNING) << "Error loading model: " << e.what();
         return false;
@@ -45,7 +45,7 @@ bool NeuralNetwork::saveModel(std::string path, bool isTrained){
         }
         // save model to path
         LOG(INFO) << "Saving model to: " << path;
-        torch::save(this->neuralNet, path);
+        torch::save(m_NN, path);
     } catch (const std::exception& e) {
         LOG(WARNING) << "Error saving model: " << e.what();
         return false;
@@ -70,8 +70,9 @@ NeuralNetwork::NeuralNetwork(std::string path, bool useCPU) {
         }
     }
 
-    this->neuralNet = Network(INPUT_CHANNELS, PLANE_SIZE, PLANE_SIZE, OUTPUT_SIZE, CONV_FILTERS, POLICY_FILTERS, VALUE_FILTERS);
-    this->neuralNet->to(this->device);
+    m_NN = Network(INPUT_CHANNELS, PLANE_SIZE, PLANE_SIZE, OUTPUT_SIZE, CONV_FILTERS, POLICY_FILTERS, VALUE_FILTERS);
+    m_NN->eval();
+    m_NN->to(this->device);
 
     // if the path is given, load the model
     if (!path.empty()){
@@ -89,7 +90,7 @@ NeuralNetwork::NeuralNetwork(std::string path, bool useCPU) {
         if(!this->saveModel("")){
             exit(EXIT_FAILURE);
         }
-    }
+    }    
 
     // random input
     LOG(DEBUG) << "Testing random input...";
@@ -103,12 +104,12 @@ NeuralNetwork::~NeuralNetwork() {
 }
 
 Network NeuralNetwork::getNetwork() {
-    return this->neuralNet;
+    return m_NN;
 }
 
 std::pair<torch::Tensor, torch::Tensor> NeuralNetwork::predict(torch::Tensor &input) {
     input = input.to(this->device);
-    return this->neuralNet->forward(input);
+    return m_NN->forward(input);
 }
 
 std::tuple<torch::Tensor, torch::Tensor> loss_function(std::tuple<torch::Tensor, torch::Tensor> outputs, torch::Tensor target) {
@@ -140,8 +141,8 @@ void NeuralNetwork::trainBatches(ChessDataLoader &loader, torch::optim::Optimize
     float Loss = 0;
 
     // enable training mode
-    this->neuralNet->train();
-    this->neuralNet->to(this->device);
+    m_NN->train();
+    m_NN->to(this->device);
 
     LossHistory loss_history;
     loss_history.batch_size = batch_size;
@@ -200,5 +201,5 @@ void NeuralNetwork::trainBatches(ChessDataLoader &loader, torch::optim::Optimize
     this->saveModel("./models/model_" + timeString, true);
 
     // set network back to evaluation mode
-    this->neuralNet->eval();
+    m_NN->eval();
 }

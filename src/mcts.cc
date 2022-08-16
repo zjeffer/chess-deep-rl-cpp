@@ -1,8 +1,3 @@
-#include <stdio.h>
-#include <chrono>
-#include <iostream>
-#include <tuple>
-
 #include "mcts.hh"
 
 
@@ -23,7 +18,6 @@ void MCTS::run_simulations(int num_simulations) {
 	float value = expand(m_Root);
 	utils::addDirichletNoise(m_Root);
 
-
 	tqdm bar;
 	for (int i = 0; i < num_simulations && g_running && g_isSelfPlaying; i++) {
 		bar.progress(i, num_simulations);
@@ -41,12 +35,8 @@ void MCTS::run_simulations(int num_simulations) {
 }
 
 Node* MCTS::select(Node* root){
-	// auto start_time = std::chrono::high_resolution_clock::now();
-
 	Node* current = root;
-	int traversals = 0;
     while (!current->isLeaf()) {
-		traversals++;
         // get the max Q+U value
 		std::vector<Node*> children = current->getChildren();
 		// start with random child as best child
@@ -70,10 +60,6 @@ Node* MCTS::select(Node* root){
 		}
 		current = best_child;
     }
-	// auto stop = std::chrono::high_resolution_clock::now();
-	// auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start_time);
-	// LOG(INFO) << "Selection took " << duration.count() << " microseconds";
-
 	return current;
 }
 
@@ -93,7 +79,6 @@ float MCTS::expand(Node* node){
 	std::vector<thc::Move> legal_moves;
 	env.getLegalMoves(legal_moves);
 
-	// TODO: this might not work properly
 	if (legal_moves.size() == 0) {
 		// game is finished in this node, calculate value
 		if (env.isGameOver()) {

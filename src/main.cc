@@ -25,11 +25,6 @@ std::unique_ptr<MainWindow> g_mainWindow = nullptr;
 void signal_handling(int signal) {
 	std::cerr << "Signal " << signal << " received. Quitting..." << std::endl;
 	g_running = false;
-
-	if (g_mainWindow != nullptr) {
-		g_mainWindow->close();
-		g_mainWindow.reset();
-	}
 }
 
 // argument parsing (https://stackoverflow.com/a/868894/10180569)
@@ -174,6 +169,8 @@ int main(int argc, char** argv) {
 			std::cout << "No amount of parallel games specified. Using default value of " << parallel_games << "." << std::endl;
 		}
 
+		logger = std::make_shared<Logger>();
+
 		std::shared_ptr<NeuralNetwork> nn;
 		if (inputParser.getCmdOption("--model") != "") {
 			try {
@@ -184,9 +181,6 @@ int main(int argc, char** argv) {
 				exit(EXIT_FAILURE);
 			}
 		}
-
-		
-		logger = std::make_shared<Logger>();
 
 		// run in console mode
 		g_isSelfPlaying = true;
