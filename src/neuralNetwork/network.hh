@@ -43,6 +43,8 @@ struct NetworkImpl : public torch::nn::Module {
 
 	}
 
+	~NetworkImpl() {}
+
 	std::pair<torch::Tensor, torch::Tensor> forward(const torch::Tensor& input) {
 		auto x = convInput(input);
 		x = resBlock1(x);

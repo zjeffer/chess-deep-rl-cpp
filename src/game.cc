@@ -25,6 +25,12 @@ Game::Game(int simulations, Environment* env, Agent* white, Agent* black) {
 	m_Game_id = "game-" + current_date + "-" + std::to_string(game_id_dist(g_generator));
 }
 
+Game::~Game() {
+	delete m_White;
+	delete m_Black;
+	delete m_Previous_moves;
+}
+
 void Game::reset() {
 	m_Env->reset();
 	m_Memory.clear();
@@ -39,8 +45,11 @@ int Game::playGame(bool stochastic) {
 		m_Env->printBoard();
 		
 		this->playMove();
-		LOG(INFO) << "Value according to white: " << m_White->getMCTS()->getRoot()->getQ();
-		LOG(INFO) << "Value according to black: " << m_Black->getMCTS()->getRoot()->getQ();
+		if (!m_Env->getCurrentPlayer()) {
+			LOG(INFO) << "Value according to current player (white): " << m_White->getMCTS()->getRoot()->getQ();
+		} else {
+			LOG(INFO) << "Value according to current player (black): " << m_Black->getMCTS()->getRoot()->getQ();
+		}
 
 		counter++;
 		if (counter > MAX_MOVES) {
@@ -215,7 +224,7 @@ void Game::memoryElementToTensors(MemoryElement *memory_element, torch::Tensor& 
 	input_tensor = env.boardToInput().flatten(0, 1);
 	
 	// convert the probs to the policy output
-	torch::Tensor policy_output = torch::full({73, 8, 8}, 0.0);
+	torch::Tensor policy_output = torch::full({73, 8, 8}, 0.0f);
 	thc::ChessRules* rules = new thc::ChessRules();
 	rules->Forsyth(memory_element->state.c_str());
 	for (MoveProb moveProb : memory_element->probs){

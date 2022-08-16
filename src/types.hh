@@ -9,6 +9,8 @@
  * 
  */
 struct MoveProb {
+	~MoveProb() {};
+
 	// the move
 	thc::Move move;
 	// the probability
@@ -19,6 +21,8 @@ struct MoveProb {
  * @brief Represents a single element of chess memory
  */
 struct MemoryElement {
+	~MemoryElement() {};
+
 	// the fen string
 	std::string state;
 	// a dictionary of moves and their probabilities
@@ -28,18 +32,12 @@ struct MemoryElement {
 };
 
 struct LossHistory {
+	~LossHistory() {};
+
 	int historySize = 0;
 	int batch_size = 0;
 	int data_size = 0;
 	std::vector<float> losses = std::vector<float>();
 	std::vector<float> values  = std::vector<float>();
 	std::vector<float> policies = std::vector<float>();
-};
-
-
-struct SelfPlayOptions {
-	int amount_of_sims = 400;
-	std::string network_path = "";
-	std::string memory_path = "./memory/";
-	
 };

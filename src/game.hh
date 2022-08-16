@@ -22,6 +22,8 @@ class Game {
 	 */
     Game(int simulations, Environment* env, Agent* white, Agent* black);
 
+	~Game();
+
 	/**
 	 * @brief Play one game. Returns the winner.
 	 * 

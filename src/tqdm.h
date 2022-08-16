@@ -69,6 +69,8 @@ class tqdm {
             }
         }
 
+        ~tqdm() {}
+
         void reset() {
             t_first = std::chrono::system_clock::now();
             t_old = std::chrono::system_clock::now();
