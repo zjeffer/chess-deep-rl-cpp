@@ -9,6 +9,8 @@
 #include <signal.h>
 #include <opencv2/opencv.hpp>
 
+#include "node.hh"
+#include "selfplay.hh"
 #include "train.hh"
 #include "logger/logger.hh"
 
@@ -18,10 +20,10 @@
 
 #include "common.hh"
 
-std::unique_ptr<MainWindow> g_mainWindow;
+std::unique_ptr<MainWindow> g_mainWindow = nullptr;
 
 void signal_handling(int signal) {
-	LOG(INFO) << "Signal " << signal << " received. Quitting...";
+	std::cerr << "Signal " << signal << " received. Quitting..." << std::endl;
 	g_running = false;
 
 	if (g_mainWindow != nullptr) {
@@ -35,15 +37,15 @@ class InputParser {
   public:
     InputParser(int &argc, char **argv) {
         for (int i = 1; i < argc; ++i) {
-            this->tokens.push_back(std::string(argv[i]));
+            m_Tokens.push_back(std::string(argv[i]));
         }
     }
 
     /// @author iain
     const std::string &getCmdOption(const std::string &option) const {
         std::vector<std::string>::const_iterator itr;
-        itr = std::find(this->tokens.begin(), this->tokens.end(), option);
-        if (itr != this->tokens.end() && ++itr != this->tokens.end()) {
+        itr = std::find(m_Tokens.begin(), m_Tokens.end(), option);
+        if (itr != m_Tokens.end() && ++itr != m_Tokens.end()) {
             return *itr;
         }
         static const std::string empty_string("");
@@ -52,11 +54,11 @@ class InputParser {
 
     /// @author iain
     bool cmdOptionExists(const std::string &option) const {
-        return std::find(this->tokens.begin(), this->tokens.end(), option) != this->tokens.end();
+        return std::find(m_Tokens.begin(), m_Tokens.end(), option) != m_Tokens.end();
     }
 
   private:
-    std::vector<std::string> tokens;
+    std::vector<std::string> m_Tokens;
 };
 
 void printUsage(char* filename) {
@@ -67,8 +69,10 @@ void printUsage(char* filename) {
 	std::cout << "  --console\t\t\tRun in console mode" << std::endl;
 	std::cout << "  --sims\t\t\tAmount of simulations" << std::endl;
 	std::cout << "  --parallel-games\t\tAmount of games to play in parallel" << std::endl;
-	std::cout << "  --train <model_path>\t\tTrain the model" << std::endl;
-	exit(EXIT_SUCCESS);
+	std::cout << "  --train\t\tTrain the model. Needs a --model parameter" << std::endl;
+	std::cout << "  --model\t\tModel to train/run selfplay with" << std::endl;
+	std::cout << "  --bs\t\t\tBatch size (for training)" << std::endl;
+	std::cout << "  --lr\t\t\tLearning rate (for training)" << std::endl;
 }
 
 int main(int argc, char** argv) {
@@ -85,14 +89,58 @@ int main(int argc, char** argv) {
 	InputParser inputParser = InputParser(argc, argv);
 	if (inputParser.cmdOptionExists("-h") || inputParser.cmdOptionExists("--help")) {
 		printUsage(argv[0]);
+		exit(EXIT_SUCCESS);
+	}
+
+	if (inputParser.cmdOptionExists("--test")) {
+		logger = std::make_shared<Logger>();
+		// TODO: create unit tests
+		exit(EXIT_SUCCESS);
 	}
 
 	if (inputParser.cmdOptionExists("--train")) {
 		// get network path
+		std::string networkPath = "";
+		if (inputParser.getCmdOption("--model") != "") {
+			try {
+				networkPath = inputParser.getCmdOption("--model");				
+			} catch (const std::exception& e) {
+				std::cerr << "Could not load model. Make sure you entered a valid path" << std::endl;
+				std::cerr << e.what() << std::endl;
+				exit(EXIT_FAILURE);
+			}
+		} else {
+			std::cerr << "No model path specified" << std::endl;
+			exit(EXIT_FAILURE);
+		}
+
+		int batchSize = 128;
+		float learningRate = 0.02;
+
+		if (inputParser.cmdOptionExists("--bs")) {
+			try {
+				batchSize = std::stoi(inputParser.getCmdOption("--bs"));
+			} catch (const std::exception& e) {
+				std::cerr << "Could not parse batch size. Make sure you entered a valid number" << std::endl;
+				std::cerr << e.what() << std::endl;
+				exit(EXIT_FAILURE);
+			}
+		}
+
+		if (inputParser.cmdOptionExists("--lr")) {
+			try {
+				learningRate = std::stof(inputParser.getCmdOption("--lr"));
+			} catch (const std::exception& e) {
+				std::cerr << "Could not parse learning rate. Make sure you entered a valid number" << std::endl;
+				std::cerr << e.what() << std::endl;
+				exit(EXIT_FAILURE);
+			}
+		}
+
 		logger = std::make_shared<Logger>();
-		const std::string& network_path = inputParser.getCmdOption("--train");
-		Trainer trainer(network_path);
+		Trainer trainer(networkPath, batchSize, learningRate);
 		trainer.train();
+		return return_code;
 	} else if (inputParser.cmdOptionExists("--console")) {
 		// sims
 		if (inputParser.getCmdOption("--sims") != "") {
@@ -126,11 +174,47 @@ int main(int argc, char** argv) {
 			std::cout << "No amount of parallel games specified. Using default value of " << parallel_games << "." << std::endl;
 		}
 
+		std::shared_ptr<NeuralNetwork> nn;
+		if (inputParser.getCmdOption("--model") != "") {
+			try {
+				nn = std::make_shared<NeuralNetwork>(inputParser.getCmdOption("--model"));
+			} catch (const std::exception& e) {
+				std::cerr << "Could not load model. Make sure you entered a valid path" << std::endl;
+				std::cerr << e.what() << std::endl;
+				exit(EXIT_FAILURE);
+			}
+		}
+
 		
 		logger = std::make_shared<Logger>();
+
+		// run in console mode
+		g_isSelfPlaying = true;
+		g_running = true;
+		SelfPlay::playContinuously(nn, amount_of_sims);
+		// TODO: run in threads
 		
-		// TODO: write code to run selfplay without GUI
+		
+		/* // TODO: write code to run selfplay without GUI
+		std::vector<std::thread*> threads = std::vector<std::thread*>(parallel_games, nullptr);
+		for (int t = 0; t < parallel_games; t++) {
+			std::thread thread_selfplay = std::thread(
+				&SelfPlay::playContinuously,
+				nn, // model
+				amount_of_sims // amount of sims per move
+			);
+			threads[t] = &thread_selfplay;
+		}
+
 		LOG(DEBUG) << "Running in console mode!";
+		for (int t = 0; t < parallel_games; t++) {
+			if (threads[t] != nullptr) {
+				threads[t]->join();
+			} else {
+				LOG(WARNING) << "Thread " << t << " is nullptr?";
+			}
+		} */
+		return return_code;
 	} else {
 		// GUI app
 		QApplication a(argc, argv);
