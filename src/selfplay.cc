@@ -15,14 +15,14 @@ void SelfPlay::playContinuously(const std::shared_ptr<NeuralNetwork> &nn, int am
 
     struct Winners winners;
 
-    while (g_running && g_isSelfPlaying) {
+    while (g_running && g_IsSelfPlaying) {
         Agent *white = new Agent("white", nn);
         Agent *black = new Agent("black", nn);
 
         int winner = playGame(amount_of_sims, white, black);
         std::cout << "\n\n\n";
 
-        if (!g_isSelfPlaying) {
+        if (!g_IsSelfPlaying) {
             break;
         }
 

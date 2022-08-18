@@ -188,7 +188,7 @@ std::vector<float> utils::sampleFromGamma(int size){
     std::vector<float> samples = std::vector<float>(size, 0.0f);
     float sum = 0.0f;
     for (int i = 0; i < size; i++){
-        samples[i] = g_distribution(g_generator);
+        samples[i] = g_distribution(g_Generator);
         sum += samples[i];
     }
     for (int i = 0; i < size; i++){

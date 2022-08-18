@@ -29,10 +29,12 @@ public:
 	void startSelfPlay();
 	void stopSelfPlay();
 
+	Console* getConsole() const;
+
 private:
-	Ui::MainWindow *ui;
+	Ui::MainWindow *m_Ui;
 	Console* m_Console;
 
-	std::shared_ptr<NeuralNetwork> nn;
+	std::shared_ptr<NeuralNetwork> m_NN;
 };
 

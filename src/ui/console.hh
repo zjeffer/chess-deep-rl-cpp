@@ -1,20 +1,22 @@
 #pragma once
 
-#include <QPlainTextEdit>
-#include <qscrollbar.h>
+#include <QTextEdit>
+#include <QScrollBar>
 
-class Console : public QPlainTextEdit {
+class Console : public QTextEdit {
 
   Q_OBJECT
-
-  signals:
-	void getData(const QByteArray &text);
 
   public:
 	explicit Console(QWidget *parent = nullptr);
 
-	void putData(const QByteArray &text);
 	void setLocalEchoEnabled(bool set);
+
+  public slots:
+	void putData(const QByteArray &text);
+
+  signals:
+	void getData(const QByteArray &text);
 
   protected:
 	void keyPressEvent(QKeyEvent *e) override;
@@ -25,5 +27,8 @@ class Console : public QPlainTextEdit {
   private:
 	bool m_localEchoEnabled = false;
 
-	QScrollBar* m_verticalScrollBar;
+	QScrollBar* m_VerticalScrollBar;
+
+	// queue of lines to be printed
+	QStringList m_Lines;
 };

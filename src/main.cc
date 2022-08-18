@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
 	}
 
 	if (inputParser.cmdOptionExists("--test")) {
-		logger = std::make_shared<Logger>();
+		g_Logger = std::make_shared<Logger>();
 		// TODO: create unit tests
 		exit(EXIT_SUCCESS);
 	}
@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
 			}
 		}
 
-		logger = std::make_shared<Logger>();
+		g_Logger = std::make_shared<Logger>();
 		Trainer trainer(networkPath, batchSize, learningRate);
 		trainer.train();
 		return return_code;
@@ -169,7 +169,7 @@ int main(int argc, char** argv) {
 			std::cout << "No amount of parallel games specified. Using default value of " << parallel_games << "." << std::endl;
 		}
 
-		logger = std::make_shared<Logger>();
+		g_Logger = std::make_shared<Logger>();
 
 		std::shared_ptr<NeuralNetwork> nn;
 		if (inputParser.getCmdOption("--model") != "") {
@@ -183,7 +183,7 @@ int main(int argc, char** argv) {
 		}
 
 		// run in console mode
-		g_isSelfPlaying = true;
+		g_IsSelfPlaying = true;
 		g_running = true;
 		SelfPlay::playContinuously(nn, amount_of_sims);
 		// TODO: run in threads

@@ -22,7 +22,7 @@ Game::Game(int simulations, Environment* env, Agent* white, Agent* black) {
 	
 	// create a random id
 	std::string current_date = std::to_string(std::time(nullptr));
-	m_Game_id = "game-" + current_date + "-" + std::to_string(game_id_dist(g_generator));
+	m_Game_id = "game-" + current_date + "-" + std::to_string(game_id_dist(g_Generator));
 }
 
 Game::~Game() {
@@ -41,7 +41,7 @@ int Game::playGame(bool stochastic) {
 	int winner = 0;
 	int counter = 0;
 	thc::DRAWTYPE drawType;
-	while (!m_Env->isGameOver() && g_running && g_isSelfPlaying) {
+	while (!m_Env->isGameOver() && g_running && g_IsSelfPlaying) {
 		m_Env->printBoard();
 		
 		this->playMove();
@@ -75,7 +75,7 @@ int Game::playGame(bool stochastic) {
 		}
 	}
 
-	if (!g_isSelfPlaying) {
+	if (!g_IsSelfPlaying) {
 		return winner;
 	}
 
@@ -170,7 +170,7 @@ thc::Move Game::getBestMoveStochastic(std::vector<MoveProb> &probs){
 	for (const auto& prob : probs){
 		total_probability += prob.prob;
 	}
-	float p = (m_Dist(g_generator) / static_cast<float>(RAND_MAX)) * total_probability;
+	float p = (m_Dist(g_Generator) / static_cast<float>(RAND_MAX)) * total_probability;
 	int index = 0;
 	while ((p -= probs[index].prob) > 0) {
 		index++;
