@@ -7,7 +7,7 @@ ChessDataSet::ChessDataSet(std::string path) {
     int draws = 0, whiteWins = 0, blackWins = 0;
     // for every folder in path/
     for (const auto &game : std::filesystem::directory_iterator(path)) {
-        if (!g_running) return;
+        if (!g_Running) return;
         // if folder is a folder and starts with game-
         if (std::filesystem::is_directory(game.path()) && game.path().string().find(path + "/game-") == 0) {
             int result = -2;

@@ -14,7 +14,7 @@ Trainer::~Trainer(){
 void Trainer::train() {
 	// loading the dataset
 	ChessDataSet chessDataSet = ChessDataSet("memory");
-	if (!g_running) return;
+	if (!g_Running) return;
 	auto train_set = chessDataSet.map(torch::data::transforms::Stack<>());
 	int train_set_size = train_set.size().value();
 	auto data_loader = torch::data::make_data_loader<torch::data::samplers::RandomSampler>(std::move(train_set), m_BatchSize);

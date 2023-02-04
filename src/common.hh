@@ -3,7 +3,7 @@
 #include "logger/logger.hh"
 #include <random>
 
-inline bool g_running = true;
+inline bool g_Running = true;
 inline bool g_IsSelfPlaying = false;
 
 inline std::shared_ptr<Logger> g_Logger;

@@ -1,5 +1,7 @@
 #include <iostream>
 #include <QFileDialog>
+#include <qobjectdefs.h>
+#include <QMessageBox>
 
 #include "mainwindow.hh"
 #include "./ui_mainwindow.h"
@@ -24,16 +26,20 @@ MainWindow::MainWindow(QWidget *parent) :
 	g_Generator.seed(std::random_device{}());
 	LOG(DEBUG) << "Test random value: " << g_Generator();
 
-	// set button actions
-	connect(m_Ui->Button_setModel, &QPushButton::clicked, this, &MainWindow::on_setModel_clicked);
-	connect(m_Ui->Button_setDataFolder, &QPushButton::clicked, this, &MainWindow::on_setDataFolder_clicked);
-	connect(m_Ui->Button_Start, &QPushButton::clicked, this, &MainWindow::on_startSelfPlay_clicked);
+	// hold connections
+	m_Connections = {
+		// button actions
+		connect(m_Ui->Button_setModel, &QPushButton::clicked, this, &MainWindow::on_setModel_clicked),
+		connect(m_Ui->Button_setDataFolder, &QPushButton::clicked, this, &MainWindow::on_setDataFolder_clicked),
+		connect(m_Ui->Button_Start, &QPushButton::clicked, this, &MainWindow::on_startSelfPlay_clicked),
+		// menu actions
+		connect(m_Ui->actionExit, &QAction::triggered, this, &MainWindow::close),
+		// g3log <-> console connection
+		connect(m_Console, &Console::getData, m_Console, &Console::putData)
+	};
 
 	// set input text
-	m_Ui->Input_setDataFolder->setText(QDir::currentPath() + "/memory/");
-
-	connect(m_Console, &Console::getData, m_Console, &Console::putData);
-	connect(m_Ui->actionExit, &QAction::triggered, this, &MainWindow::close);
+	m_Ui->Input_setDataFolder->setText(QDir::currentPath() + "/memory/");	
 }
 
 MainWindow::~MainWindow() { 
@@ -41,9 +47,13 @@ MainWindow::~MainWindow() {
 	if (g_IsSelfPlaying){
 		stopSelfPlay();
 	}
-	g_running = false;
-	delete m_Console;
-	delete m_Ui;
+	// disconnect signals
+	for (auto& c : m_Connections) {
+		disconnect(c);
+	}
+	g_Running = false;
+	// delete m_Console;
+	// delete m_Ui;
 }
 
 

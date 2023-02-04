@@ -19,7 +19,7 @@ void MCTS::run_simulations(int num_simulations) {
 	utils::addDirichletNoise(m_Root);
 
 	tqdm bar;
-	for (int i = 0; i < num_simulations && g_running && g_IsSelfPlaying; i++) {
+	for (int i = 0; i < num_simulations && g_Running && g_IsSelfPlaying; i++) {
 		bar.progress(i, num_simulations);
 		// selection
 		Node* leaf = select(m_Root);

@@ -24,7 +24,8 @@ std::unique_ptr<MainWindow> g_mainWindow = nullptr;
 
 void signal_handling(int signal) {
 	std::cerr << "Signal " << signal << " received. Quitting..." << std::endl;
-	g_running = false;
+	g_IsSelfPlaying = false;
+	g_Running = false;
 }
 
 // argument parsing (https://stackoverflow.com/a/868894/10180569)
@@ -184,7 +185,7 @@ int main(int argc, char** argv) {
 
 		// run in console mode
 		g_IsSelfPlaying = true;
-		g_running = true;
+		g_Running = true;
 		SelfPlay::playContinuously(nn, amount_of_sims);
 		// TODO: run in threads
 		

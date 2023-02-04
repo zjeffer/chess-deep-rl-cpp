@@ -1,4 +1,5 @@
 #include "game.hh"
+#include "common.hh"
 
 
 Game::Game(int simulations, Environment* env, Agent* white, Agent* black) {
@@ -41,7 +42,7 @@ int Game::playGame(bool stochastic) {
 	int winner = 0;
 	int counter = 0;
 	thc::DRAWTYPE drawType;
-	while (!m_Env->isGameOver() && g_running && g_IsSelfPlaying) {
+	while (!m_Env->isGameOver() && g_Running && g_IsSelfPlaying) {
 		m_Env->printBoard();
 		
 		this->playMove();
@@ -63,10 +64,6 @@ int Game::playGame(bool stochastic) {
 		}
 	}
 
-	if (!g_running) {
-		exit(EXIT_SUCCESS);
-	}
-
 	if (m_Env->isGameOver()){
 		if (m_Env->terminalState == thc::TERMINAL_BCHECKMATE){
 			winner = 1;
@@ -75,7 +72,7 @@ int Game::playGame(bool stochastic) {
 		}
 	}
 
-	if (!g_IsSelfPlaying) {
+	if (!g_IsSelfPlaying || !g_Running) {
 		return winner;
 	}
 

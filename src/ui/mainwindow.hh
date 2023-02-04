@@ -35,6 +35,8 @@ private:
 	Ui::MainWindow *m_Ui;
 	Console* m_Console;
 
+	std::vector<QMetaObject::Connection> m_Connections;
+
 	std::shared_ptr<NeuralNetwork> m_NN;
 };
 

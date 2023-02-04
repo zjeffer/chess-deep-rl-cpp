@@ -15,7 +15,7 @@ void SelfPlay::playContinuously(const std::shared_ptr<NeuralNetwork> &nn, int am
 
     struct Winners winners;
 
-    while (g_running && g_IsSelfPlaying) {
+    while (g_Running && g_IsSelfPlaying) {
         Agent *white = new Agent("white", nn);
         Agent *black = new Agent("black", nn);
 

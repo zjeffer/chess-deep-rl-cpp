@@ -151,7 +151,7 @@ void NeuralNetwork::trainBatches(ChessDataLoader &loader, torch::optim::Optimize
 	LOG(INFO) << "Starting training with " << data_size << " examples";
 	int index = 0;
 	for (auto batch : loader) {
-        if (!g_running) {
+        if (!g_Running) {
             exit(EXIT_FAILURE);
         }
 
