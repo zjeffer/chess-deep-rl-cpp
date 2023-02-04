@@ -7,3 +7,4 @@ memory/game-*
 models/*.pt
 lib/
 .vscode/settings.json
+CMakeLists.txt.user
